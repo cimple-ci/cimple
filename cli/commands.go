@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/codegangsta/cli"
+	"github.com/lukesmith/cimple/config"
 	"log"
 )
 
@@ -23,6 +24,22 @@ func Server() cli.Command {
 		Usage:   "Start the Cimple server",
 		Action: func(c *cli.Context) {
 			log.Printf("server")
+		},
+	}
+}
+
+func Config() cli.Command {
+	return cli.Command{
+		Name:    "config",
+		Aliases: []string{"c"},
+		Usage:   "Load the config",
+		Action: func(c *cli.Context) {
+			cfg, err := config.LoadConfig("cimple.hcl")
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Printf("%+v", cfg)
+			log.Printf("config")
 		},
 	}
 }

@@ -13,6 +13,7 @@ func main() {
 	app.Commands = []cli.Command{
 		cimpleCli.Run(),
 		cimpleCli.Server(),
+		cimpleCli.Config(),
 	}
 
 	app.Run(os.Args)
