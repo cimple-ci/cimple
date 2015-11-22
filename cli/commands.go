@@ -2,8 +2,9 @@ package cli
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/lukesmith/cimple/config"
+	"github.com/lukesmith/cimple/project"
 	"log"
+	"os"
 )
 
 func Run() cli.Command {
@@ -12,7 +13,12 @@ func Run() cli.Command {
 		Aliases: []string{"r"},
 		Usage:   "Run Cimple against the current directory",
 		Action: func(c *cli.Context) {
-			log.Printf("moo")
+			cfg, err := project.LoadConfig("cimple.hcl")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			project.Run(cfg, os.Stdout, os.Stderr)
 		},
 	}
 }
@@ -34,7 +40,7 @@ func Config() cli.Command {
 		Aliases: []string{"c"},
 		Usage:   "Load the config",
 		Action: func(c *cli.Context) {
-			cfg, err := config.LoadConfig("cimple.hcl")
+			cfg, err := project.LoadConfig("cimple.hcl")
 			if err != nil {
 				log.Fatal(err)
 			}

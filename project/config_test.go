@@ -1,4 +1,4 @@
-package config
+package project
 
 import (
 	"path/filepath"
@@ -28,18 +28,27 @@ func TestParse(t *testing.T) {
 				Description: "Description of the echo task",
 				Name:        "echo",
 				Archive:     []string{"cow.txt"},
+				Env: map[string]string{
+					"task_env": "global",
+				},
 				Commands: map[string]Command{
 					"echo_hello_world": Command{
 						Command: "echo",
 						Args:    []string{"hello world"},
+						Env:     map[string]string{},
 					},
 					"echo": Command{
 						Command: "echo",
 						Args:    []string{"moo >> cow.txt"},
+						Skip:    true,
+						Env:     map[string]string{},
 					},
 					"cat": Command{
 						Command: "cat",
 						Args:    []string{"cow.txt"},
+						Env: map[string]string{
+							"env": "test",
+						},
 					},
 				},
 			},

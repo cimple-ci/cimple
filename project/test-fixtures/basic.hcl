@@ -8,6 +8,10 @@ description = "Project description"
 task "echo" {
   description = "Description of the echo task"
 
+  env {
+    task_env = "global"
+  }
+
   command "echo_hello_world" {
     condition {
       // Command will only run on local build locations
@@ -22,11 +26,16 @@ task "echo" {
   command "echo" {
     command = "echo"
     args = ["moo >> cow.txt"]
+    skip = true
   }
 
   command "cat" {
     command = "cat"
     args = ["cow.txt"]
+
+    env {
+      env = "test"
+    }
   }
 
   archive = ["cow.txt"]
