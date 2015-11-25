@@ -14,6 +14,7 @@ type Task struct {
 	Commands    map[string]Command
 	Archive     []string
 	Env         map[string]string
+	Skip        bool
 }
 
 type Command struct {
@@ -31,6 +32,7 @@ type Config struct {
 type Project struct {
 	Name        string
 	Description string
+	Env         map[string]string
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -58,6 +60,7 @@ func LoadConfig(path string) (*Config, error) {
 
 	result.Project.Name = m["name"].(string)
 	result.Project.Description = m["description"].(string)
+	result.Project.Env = make(map[string]string)
 
 	list, ok := obj.Node.(*ast.ObjectList)
 	if !ok {
@@ -68,7 +71,13 @@ func LoadConfig(path string) (*Config, error) {
 	for _, m := range matches.Items {
 		err := parseTask(result.Tasks, m)
 		if err != nil {
-			return nil, nil
+			return nil, err
+		}
+	}
+
+	if o := list.Filter("env"); len(o.Items) > 0 {
+		if err := parseEnvs(result.Project.Env, o); err != nil {
+			return nil, err
 		}
 	}
 

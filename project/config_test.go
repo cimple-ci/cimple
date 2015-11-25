@@ -22,11 +22,15 @@ func TestParse(t *testing.T) {
 		Project: Project{
 			Name:        "Cimple",
 			Description: "Project description",
+			Env: map[string]string{
+				"project_env": "project",
+			},
 		},
 		Tasks: map[string]Task{
 			"echo": Task{
 				Description: "Description of the echo task",
 				Name:        "echo",
+				Skip:        true,
 				Archive:     []string{"cow.txt"},
 				Env: map[string]string{
 					"task_env": "global",

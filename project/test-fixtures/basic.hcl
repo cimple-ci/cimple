@@ -5,20 +5,19 @@ cimple {
 name = "Cimple"
 description = "Project description"
 
+env {
+  project_env = "project"
+}
+
 task "echo" {
   description = "Description of the echo task"
+  skip = true
 
   env {
     task_env = "global"
   }
 
   command "echo_hello_world" {
-    condition {
-      // Command will only run on local build locations
-      attribute = "$attr.build.location"
-      value = "local"
-    }
-
     command = "echo"
     args = ["hello world"]
   }

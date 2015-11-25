@@ -7,7 +7,6 @@ description = "Cimple CI"
 
 task "test" {
   description = "Run Cimple tests"
-
   env {
     GOPATH = "{{.WorkingDir}}/_vendor"
   }

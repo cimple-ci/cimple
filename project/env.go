@@ -8,7 +8,7 @@ type ProjectVariables struct {
 	WorkingDir string
 }
 
-func GetProjectVariables() (*ProjectVariables, error) {
+func GetVariables() (*ProjectVariables, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, err
