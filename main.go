@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/codegangsta/cli"
-	cimpleCli "github.com/lukesmith/cimple/cli"
 	"os"
+
+	"github.com/codegangsta/cli"
+	cimpleCli "github.com/lukesmith/cimple/cli/commands"
 )
 
 func main() {
