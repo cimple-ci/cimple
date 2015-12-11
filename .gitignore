@@ -1,4 +1,9 @@
+.idea/
+.cimple/
+
 *.swp
 *.swo
+
+.DS_Store
 
 _vendor/
