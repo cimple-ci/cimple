@@ -8,11 +8,11 @@ import (
 	"strings"
 	"text/template"
 
+	"fmt"
 	"github.com/lukesmith/cimple/env"
 	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/project"
 	"os"
-	"fmt"
 )
 
 type CommandContext struct {
@@ -56,18 +56,18 @@ func (command *CommandContext) execute(journal journal.Journal, stdout io.Writer
 		a[k] = doc.String()
 	}
 
-	journal.Record(commandStarted{Id: command.Id, Env: a, Command: command.Cmd, Args: command.Args,})
+	journal.Record(commandStarted{Id: command.Id, Env: a, Command: command.Cmd, Args: command.Args})
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	err := cmd.Run()
 
 	if err != nil {
-		journal.Record(commandFailed{Id: command.Id,})
+		journal.Record(commandFailed{Id: command.Id})
 		return err
 	}
 
-	journal.Record(commandSuccessful{Id: command.Id,})
+	journal.Record(commandSuccessful{Id: command.Id})
 
 	return nil
 }

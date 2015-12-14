@@ -8,15 +8,15 @@ func TestJournalFileRecord(t *testing.T) {
 	event := &testEvent{}
 	err := journal.Record(event)
 	if err != nil {
-		t.Fatalf("Failed to record event %s", event, err)
+		t.Errorf("Failed to record event %s - %s", event, err)
 	}
 
 	if len(writer.written) != 1 {
-		t.Fatalf("Expected a single event to have been written")
+		t.Errorf("Expected a single event to have been written")
 	}
 
 	if writer.written[0].Event != event {
-		t.Fatalf("Exepected %s to have been written", event, err)
+		t.Errorf("Expected %s to have been written", event)
 	}
 }
 

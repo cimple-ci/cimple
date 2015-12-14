@@ -1,18 +1,18 @@
 package build
 
 type commandStarted struct {
-	Id			string
-	Env 		map[string]string
+	Id      string
+	Env     map[string]string
 	Command string
-	Args 		[]string
+	Args    []string
 }
 
 type commandSuccessful struct {
-	Id			string
+	Id string
 }
 
 type commandFailed struct {
-	Id			 string
+	Id string
 }
 
 type skipCommand struct {
@@ -20,7 +20,7 @@ type skipCommand struct {
 }
 
 type taskStarted struct {
-	Id 				string
+	Id       string
 	Commands []string
 }
 

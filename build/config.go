@@ -3,9 +3,9 @@ package build
 import "io"
 import "github.com/lukesmith/cimple/journal"
 import (
+	"fmt"
 	"github.com/lukesmith/cimple/project"
 	"log"
-	"fmt"
 )
 
 type buildConfig struct {

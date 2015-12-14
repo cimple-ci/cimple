@@ -40,7 +40,7 @@ func (c *agent) read(logger *log.Logger) {
 			logger.Printf("Server rcv: %s", msg)
 			c.send([]byte("Thankyou from server"))
 		} else {
-			log.Printf("uhoh", err)
+			log.Printf("uhoh - %s", err)
 			break
 		}
 	}
