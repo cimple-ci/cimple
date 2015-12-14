@@ -1,14 +1,17 @@
 package cli
 
 import (
+	"io"
 	"log"
 	"os"
 
 	"github.com/codegangsta/cli"
-	"github.com/lukesmith/cimple/agent"
 	"github.com/lukesmith/cimple/build"
+	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/project"
-	"github.com/lukesmith/cimple/server"
+	"path"
+	"path/filepath"
+	"time"
 )
 
 func Run() cli.Command {
@@ -23,34 +26,53 @@ func Run() cli.Command {
 				panic(err)
 			}
 
-			build, err := build.NewBuild(cfg)
+			runId := time.Now().Format(time.RFC3339)
+
+			journalWriter := journal.NewFileJournalWriter(journalPath(runId))
+			journal := journal.NewJournal(journalWriter)
+
+			fileWriter, err := createOutputPathWriter(runId)
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.Print(build)
+			defer fileWriter.Close()
 
-			serverConfig := server.DefaultConfig()
-			serverConfig.Addr = ":8080"
-			server, err := server.NewServer(serverConfig, os.Stdout)
+			logWriter := io.MultiWriter(os.Stdout, fileWriter)
+			buildConfig := build.NewBuildConfig(logWriter, journal, &cfg.Project, cfg.Tasks)
+
+			build, err := build.NewBuild(buildConfig)
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			go func() {
-				err = server.Start()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
-
-			agentConfig, err := agent.DefaultConfig()
-			agentConfig.ServerPort = "8080"
-			agent, err := agent.NewAgent(agentConfig, os.Stdout)
-
-			err = agent.Start()
-			if err != nil {
-				log.Fatal(err)
-			}
+			build.Run()
 		},
 	}
+}
+
+func createOutputPathWriter(runId string) (*os.File, error) {
+	path := outputPath(runId)
+	dir := filepath.Dir(path)
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		return nil, err
+	}
+
+	fileWriter, err := os.Create(outputPath(runId))
+	if err != nil {
+		return nil, err
+	}
+
+	return fileWriter, nil
+}
+
+func journalPath(runId string) string {
+	return path.Join(cimplePath(runId), "journal")
+}
+
+func outputPath(runId string) string {
+	return path.Join(cimplePath(runId), "output")
+}
+
+func cimplePath(runId string) string {
+	return path.Join(".", ".cimple", runId)
 }

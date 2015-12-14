@@ -1,11 +1,12 @@
 package project
 
 import (
+	"io/ioutil"
+	"log"
+
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/mitchellh/mapstructure"
-	"io/ioutil"
-	"log"
 )
 
 type Task struct {
