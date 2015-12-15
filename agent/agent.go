@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/lukesmith/cimple/logging"
 )
 
 const (
@@ -38,7 +39,7 @@ type Agent struct {
 func NewAgent(config *Config, logger io.Writer) (*Agent, error) {
 	a := &Agent{
 		config: config,
-		logger: log.New(logger, "Agent:  ", log.Ldate|log.Ltime|log.Lmicroseconds|log.LUTC),
+		logger: logging.CreateLogger("Agent", logger),
 	}
 
 	return a, nil

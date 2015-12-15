@@ -1,11 +1,9 @@
 package build
 
-import "io"
-import "github.com/lukesmith/cimple/journal"
 import (
-	"fmt"
+	"io"
+	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/project"
-	"log"
 )
 
 type buildConfig struct {
@@ -22,8 +20,4 @@ func NewBuildConfig(logWriter io.Writer, journal journal.Journal, project *proje
 		project:   project,
 		tasks:     tasks,
 	}
-}
-
-func (cfg *buildConfig) createLogger(prefix string) *log.Logger {
-	return log.New(cfg.logWriter, fmt.Sprintf("%s: ", prefix), log.Ldate|log.Ltime|log.Lmicroseconds|log.LUTC)
 }

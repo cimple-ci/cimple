@@ -8,6 +8,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/lukesmith/cimple/build"
 	"github.com/lukesmith/cimple/journal"
+	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/project"
 	"path"
 	"path/filepath"
@@ -26,14 +27,24 @@ func Run() cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) {
+			runId := runId()
+			fileWriter, err := createOutputPathWriter(runId)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer fileWriter.Close()
+
+			logWriter := io.MultiWriter(os.Stdout, fileWriter)
+			logger := logging.CreateLogger("cli", logWriter)
+
 			cfg, err := loadConfig()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			skipNonSpecificTasks(c.StringSlice("task"), cfg.Tasks)
+			skipNonSpecificTasks(logger, c.StringSlice("task"), cfg.Tasks)
 
-			err = executeBuild(c, cfg)
+			err = executeBuild(runId, logWriter, c, cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -45,20 +56,9 @@ var loadConfig = func() (*project.Config, error) {
 	return project.LoadConfig("cimple.hcl")
 }
 
-var executeBuild = func(c *cli.Context, cfg *project.Config) error {
-	runId := runId()
-
-	journalWriter := journal.NewFileJournalWriter(journalPath(runId))
-	journal := journal.NewJournal(journalWriter)
-
-	fileWriter, err := createOutputPathWriter(runId)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer fileWriter.Close()
-
-	logWriter := io.MultiWriter(os.Stdout, fileWriter)
-	buildConfig := build.NewBuildConfig(logWriter, journal, &cfg.Project, cfg.Tasks)
+var executeBuild = func(runId string, out io.Writer, c *cli.Context, cfg *project.Config) error {
+	journal, _ := createJournal(runId)
+	buildConfig := build.NewBuildConfig(out, journal, &cfg.Project, cfg.Tasks)
 
 	build, err := build.NewBuild(buildConfig)
 	if err != nil {
@@ -77,7 +77,13 @@ func runId() string {
 	return time.Now().Format(time.RFC3339)
 }
 
-func skipNonSpecificTasks(specificTasks []string, tasks map[string]*project.Task) {
+func createJournal(runId string) (journal.Journal, error) {
+	journalWriter := journal.NewFileJournalWriter(journalPath(runId))
+	journal := journal.NewJournal(journalWriter)
+	return journal, nil
+}
+
+func skipNonSpecificTasks(log *log.Logger, specificTasks []string, tasks map[string]*project.Task) {
 	if len(specificTasks) != 0 {
 		for _, t := range tasks {
 			if contains(specificTasks, t.Name) {

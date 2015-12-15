@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/lukesmith/cimple/env"
 	"github.com/lukesmith/cimple/journal"
+	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/project"
 	"os"
 )
@@ -26,7 +27,7 @@ type CommandContext struct {
 func newCommandContext(commandId string, taskEnvs map[string]string, cmdConfig *project.Command) *CommandContext {
 	commandContext := new(CommandContext)
 	commandContext.Id = commandId
-	commandContext.logger = log.New(os.Stdout, "Command: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.LUTC)
+	commandContext.logger = logging.CreateLogger("Command", os.Stdout)
 	commandContext.Cmd = cmdConfig.Command
 	commandContext.Args = cmdConfig.Args
 	commandEnvs := merge(taskEnvs, cmdConfig.Env)
@@ -87,7 +88,7 @@ type Build struct {
 func NewBuild(config *buildConfig) (*Build, error) {
 	build := new(Build)
 	build.config = config
-	build.logger = config.createLogger("Build")
+	build.logger = logging.CreateLogger("Build", config.logWriter)
 	build.ID = 1
 
 	for _, task := range config.tasks {
@@ -150,7 +151,7 @@ func buildCommandContexts(logger *log.Logger, config *buildConfig, task *project
 		}
 
 		commandContext := newCommandContext(commandId, taskEnvs, &command)
-		commandContext.logger = config.createLogger("Command")
+		commandContext.logger = logging.CreateLogger("Command", config.logWriter)
 		commandContext.Env["CIMPLE_PROJECT_NAME"] = config.project.Name
 		commandContext.Env["CIMPLE_TASK_NAME"] = task.Name
 

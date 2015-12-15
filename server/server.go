@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+
+	"github.com/lukesmith/cimple/logging"
 )
 
 type Config struct {
@@ -25,7 +27,7 @@ type Server struct {
 func NewServer(config *Config, logger io.Writer) (*Server, error) {
 	s := &Server{
 		config: config,
-		logger: log.New(logger, "Server: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.LUTC),
+		logger: logging.CreateLogger("Server", logger),
 	}
 
 	return s, nil

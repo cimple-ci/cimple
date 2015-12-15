@@ -6,6 +6,7 @@ import (
 	"github.com/lukesmith/cimple/project"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"io"
 )
 
 func TestRun_Settings(t *testing.T) {
@@ -30,7 +31,7 @@ func TestRun_ExplicitTasks(t *testing.T) {
 		}, nil
 	}
 
-	executeBuild = func(c *cli.Context, cfg *project.Config) error {
+	executeBuild = func(runId string, out io.Writer, c *cli.Context, cfg *project.Config) error {
 		executedConfig = cfg
 		return nil
 	}
