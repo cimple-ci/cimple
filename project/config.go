@@ -27,7 +27,7 @@ type Command struct {
 
 type Config struct {
 	Project Project
-	Tasks   map[string]Task
+	Tasks   map[string]*Task
 }
 
 type Project struct {
@@ -53,7 +53,7 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	var result Config
-	result.Tasks = make(map[string]Task)
+	result.Tasks = make(map[string]*Task)
 
 	if err := mapstructure.WeakDecode(m, &result); err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func LoadConfig(path string) (*Config, error) {
 	return &result, nil
 }
 
-func parseTask(tasks map[string]Task, item *ast.ObjectItem) error {
+func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 	var m map[string]interface{}
 	if err := hcl.DecodeObject(&m, item.Val); err != nil {
 		return err
@@ -119,7 +119,7 @@ func parseTask(tasks map[string]Task, item *ast.ObjectItem) error {
 		}
 	}
 
-	tasks[task.Name] = task
+	tasks[task.Name] = &task
 
 	return nil
 }

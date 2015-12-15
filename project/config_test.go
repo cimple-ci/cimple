@@ -26,8 +26,8 @@ func TestParse(t *testing.T) {
 				"project_env": "project",
 			},
 		},
-		Tasks: map[string]Task{
-			"echo": Task{
+		Tasks: map[string]*Task{
+			"echo": &Task{
 				Description: "Description of the echo task",
 				Name:        "echo",
 				Skip:        true,

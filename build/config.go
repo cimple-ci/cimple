@@ -12,10 +12,10 @@ type buildConfig struct {
 	logWriter io.Writer
 	journal   journal.Journal
 	project   *project.Project
-	tasks     map[string]project.Task
+	tasks     map[string]*project.Task
 }
 
-func NewBuildConfig(logWriter io.Writer, journal journal.Journal, project *project.Project, tasks map[string]project.Task) *buildConfig {
+func NewBuildConfig(logWriter io.Writer, journal journal.Journal, project *project.Project, tasks map[string]*project.Task) *buildConfig {
 	return &buildConfig{
 		logWriter: logWriter,
 		journal:   journal,

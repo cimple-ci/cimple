@@ -91,7 +91,7 @@ func NewBuild(config *buildConfig) (*Build, error) {
 	build.ID = 1
 
 	for _, task := range config.tasks {
-		commandContexts, err := buildCommandContexts(build.logger, config, &task)
+		commandContexts, err := buildCommandContexts(build.logger, config, task)
 		if err != nil {
 			return nil, err
 		}

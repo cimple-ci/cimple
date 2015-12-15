@@ -11,6 +11,7 @@ import:
   - package: github.com/hashicorp/hcl
   - package: github.com/mitchellh/mapstructure
   - package: github.com/gorilla/websocket
+  - package: github.com/stretchr/testify
   # Get and manage a package with Git:
   #- package: github.com/Masterminds/cookoo
   #  # The repository URL
