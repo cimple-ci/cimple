@@ -81,17 +81,38 @@ type BuildTask struct {
 type Build struct {
 	ID     int
 	Tasks  []BuildTask
-	config *buildConfig
+	config *BuildConfig
 	logger *log.Logger
 }
 
-func NewBuild(config *buildConfig) (*Build, error) {
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func NewBuild(config *BuildConfig) (*Build, error) {
 	build := new(Build)
 	build.config = config
 	build.logger = logging.CreateLogger("Build", config.logWriter)
 	build.ID = 1
 
 	for _, task := range config.tasks {
+		if len(config.ExplicitTasks) != 0 {
+			if contains(config.ExplicitTasks, task.Name) {
+				if task.Skip {
+					build.logger.Printf("Unskipping task %s as explicitly specified", task.Name)
+					task.Skip = false
+				}
+			} else {
+				build.logger.Printf("Skipping task %s as not explicitly specified", task.Name)
+				task.Skip = true
+			}
+		}
+
 		commandContexts, err := buildCommandContexts(build.logger, config, task)
 		if err != nil {
 			return nil, err
@@ -105,7 +126,7 @@ func NewBuild(config *buildConfig) (*Build, error) {
 
 func (build *Build) Run() error {
 	build.logger.Printf("Running build #%d", build.ID)
-	build.config.journal.Record("Starting build")
+	build.config.journal.Record(buildStarted{Repo: build.config.repoInfo})
 
 	for _, task := range build.Tasks {
 		commandIds := []string{}
@@ -132,7 +153,7 @@ func (build *Build) Run() error {
 	return nil
 }
 
-func buildCommandContexts(logger *log.Logger, config *buildConfig, task *project.Task) ([]CommandContext, error) {
+func buildCommandContexts(logger *log.Logger, config *BuildConfig, task *project.Task) ([]CommandContext, error) {
 	var contexts []CommandContext
 
 	if task.Skip {

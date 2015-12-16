@@ -1,23 +1,29 @@
 package build
 
 import (
-	"io"
 	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/project"
+	"github.com/lukesmith/cimple/vcs"
+	"io"
 )
 
-type buildConfig struct {
-	logWriter io.Writer
-	journal   journal.Journal
-	project   *project.Project
-	tasks     map[string]*project.Task
+type BuildConfig struct {
+	BuildId       string
+	ExplicitTasks []string
+	logWriter     io.Writer
+	journal       journal.Journal
+	project       project.Project
+	tasks         map[string]*project.Task
+	repoInfo      vcs.VcsInformation
 }
 
-func NewBuildConfig(logWriter io.Writer, journal journal.Journal, project *project.Project, tasks map[string]*project.Task) *buildConfig {
-	return &buildConfig{
+func NewBuildConfig(buildId string, logWriter io.Writer, journal journal.Journal, cfg *project.Config, ri vcs.VcsInformation) *BuildConfig {
+	return &BuildConfig{
+		BuildId:   buildId,
 		logWriter: logWriter,
 		journal:   journal,
-		project:   project,
-		tasks:     tasks,
+		project:   cfg.Project,
+		tasks:     cfg.Tasks,
+		repoInfo:  ri,
 	}
 }

@@ -1,5 +1,9 @@
 package build
 
+import (
+	"github.com/lukesmith/cimple/vcs"
+)
+
 type commandStarted struct {
 	Id      string
 	Env     map[string]string
@@ -30,4 +34,8 @@ type taskFailed struct {
 
 type taskSuccessful struct {
 	Id string
+}
+
+type buildStarted struct {
+	Repo vcs.VcsInformation
 }

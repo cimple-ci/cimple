@@ -1,9 +1,9 @@
 package logging
 
 import (
-	"log"
 	"fmt"
 	"io"
+	"log"
 )
 
 func CreateLogger(prefix string, out io.Writer) *log.Logger {

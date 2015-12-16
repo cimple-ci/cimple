@@ -3,10 +3,11 @@ package cli
 import (
 	"flag"
 	"github.com/codegangsta/cli"
+	"github.com/lukesmith/cimple/build"
 	"github.com/lukesmith/cimple/project"
+	"github.com/lukesmith/cimple/vcs"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"io"
 )
 
 func TestRun_Settings(t *testing.T) {
@@ -20,7 +21,7 @@ func TestRun_Settings(t *testing.T) {
 
 func TestRun_ExplicitTasks(t *testing.T) {
 	assert := assert.New(t)
-	var executedConfig *project.Config
+	var executedConfig *build.BuildConfig
 
 	loadConfig = func() (*project.Config, error) {
 		return &project.Config{
@@ -31,8 +32,12 @@ func TestRun_ExplicitTasks(t *testing.T) {
 		}, nil
 	}
 
-	executeBuild = func(runId string, out io.Writer, c *cli.Context, cfg *project.Config) error {
-		executedConfig = cfg
+	loadRepositoryInfo = func() *vcs.VcsInformation {
+		return new(vcs.VcsInformation)
+	}
+
+	executeBuild = func(buildConfig *build.BuildConfig) error {
+		executedConfig = buildConfig
 		return nil
 	}
 
@@ -46,6 +51,5 @@ func TestRun_ExplicitTasks(t *testing.T) {
 	context := cli.NewContext(nil, set, nil)
 	command.Action(context)
 
-	assert.True(executedConfig.Tasks["one"].Skip)
-	assert.False(executedConfig.Tasks["two"].Skip)
+	assert.Equal([]string{"two"}, executedConfig.ExplicitTasks)
 }
