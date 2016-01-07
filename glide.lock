@@ -1,0 +1,20 @@
+hash: c4f7dbc54f86e7c4fe49510071527a615a694b83a1554a9bc9be891a130afa41
+updated: 2016-01-05T20:08:11.104207789Z
+imports:
+- name: github.com/codegangsta/cli
+  version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
+- name: github.com/davecgh/go-spew
+  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+- name: github.com/gorilla/websocket
+  version: 3986be78bf859e01f01af631ad76da5b269d270c
+- name: github.com/hashicorp/hcl
+  version: 5af5025c48e8bf0e03551b8757d92a774b9f0694
+- name: github.com/mitchellh/mapstructure
+  version: 281073eb9eb092240d33ef253c404f1cca550309
+- name: github.com/pmezard/go-difflib
+  version: e8554b8641db39598be7f6342874b958f12ae1d4
+- name: github.com/stretchr/objx
+  version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
+- name: github.com/stretchr/testify
+  version: e3a8ff8ce36581f87a15341206f205b1da467059
+devImports: []

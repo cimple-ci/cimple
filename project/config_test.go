@@ -35,7 +35,8 @@ func TestParse(t *testing.T) {
 				Env: map[string]string{
 					"task_env": "global",
 				},
-				Commands: map[string]Command{
+				StepOrder: []string{"echo_hello_world", "echo", "scriptfile", "cat"},
+				Steps: map[string]Step{
 					"echo_hello_world": Command{
 						Command: "echo",
 						Args:    []string{"hello world"},
@@ -54,6 +55,12 @@ func TestParse(t *testing.T) {
 							"env": "test",
 						},
 					},
+					"scriptfile": Script{
+						Body: "echo 1",
+						Env: map[string]string{
+							"env": "test",
+						},
+					},
 				},
 			},
 		},
@@ -63,3 +70,6 @@ func TestParse(t *testing.T) {
 		t.Fatalf("file: %s\n\n%#v\n\n%#v", file, actual, expected)
 	}
 }
+
+// TODO: Test task names are unique
+// TODO: Test step names within a task are unique

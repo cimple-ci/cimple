@@ -2,10 +2,12 @@ package project
 
 import (
 	"os"
+	"strings"
 )
 
 type ProjectVariables struct {
 	WorkingDir string
+	HostEnvVar map[string]string
 }
 
 func GetVariables() (*ProjectVariables, error) {
@@ -14,8 +16,14 @@ func GetVariables() (*ProjectVariables, error) {
 		return nil, err
 	}
 
-	e := new(ProjectVariables)
-	e.WorkingDir = wd
+	pv := new(ProjectVariables)
+	pv.WorkingDir = wd
+	pv.HostEnvVar = make(map[string]string)
 
-	return e, nil
+	for _, e := range os.Environ() {
+		pair := strings.Split(e, "=")
+		pv.HostEnvVar[pair[0]] = pair[1]
+	}
+
+	return pv, nil
 }

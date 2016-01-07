@@ -28,6 +28,14 @@ task "echo" {
     skip = true
   }
 
+  script "scriptfile" {
+    body = "echo 1"
+
+    env {
+      env = "test"
+    }
+  }
+
   command "cat" {
     command = "cat"
     args = ["cow.txt"]

@@ -4,28 +4,28 @@ import (
 	"github.com/lukesmith/cimple/vcs"
 )
 
-type commandStarted struct {
-	Id      string
-	Env     map[string]string
-	Command string
-	Args    []string
+type stepStarted struct {
+	Id   string
+	Env  map[string]string
+	Step string
+	Args []string
 }
 
-type commandSuccessful struct {
+type stepSuccessful struct {
 	Id string
 }
 
-type commandFailed struct {
+type stepFailed struct {
 	Id string
 }
 
-type skipCommand struct {
+type skipStep struct {
 	Id string
 }
 
 type taskStarted struct {
-	Id       string
-	Commands []string
+	Id    string
+	Steps []string
 }
 
 type taskFailed struct {

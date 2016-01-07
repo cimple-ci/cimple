@@ -3,6 +3,7 @@ package build
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"log"
 	exec "os/exec"
 	"strings"
@@ -16,7 +17,7 @@ import (
 	"os"
 )
 
-type CommandContext struct {
+type StepContext struct {
 	Id     string
 	Env    map[string]string
 	Cmd    string
@@ -24,27 +25,42 @@ type CommandContext struct {
 	logger *log.Logger
 }
 
-func newCommandContext(commandId string, taskEnvs map[string]string, cmdConfig *project.Command) *CommandContext {
-	commandContext := new(CommandContext)
-	commandContext.Id = commandId
-	commandContext.logger = logging.CreateLogger("Command", os.Stdout)
-	commandContext.Cmd = cmdConfig.Command
-	commandContext.Args = cmdConfig.Args
-	commandEnvs := merge(taskEnvs, cmdConfig.Env)
-	commandContext.Env = merge(commandEnvs, env.Cimple())
-	return commandContext
+func newStepContext(stepId string, taskEnvs map[string]string, stepConfig project.Step) *StepContext {
+	stepContext := new(StepContext)
+	stepContext.Id = stepId
+	stepContext.logger = logging.CreateLogger("Step", os.Stdout)
+
+	command, ok := stepConfig.(project.Command)
+	if ok {
+		stepContext.Cmd = command.Command
+		stepContext.Args = command.Args
+	}
+
+	script, ok := stepConfig.(project.Script)
+	if ok {
+		f, _ := ioutil.TempFile(os.TempDir(), "step")
+		f.WriteString(script.Body)
+		f.Close()
+
+		stepContext.Cmd = "/bin/sh"
+		stepContext.Args = []string{f.Name()}
+	}
+
+	stepEnvs := merge(taskEnvs, stepConfig.GetEnv())
+	stepContext.Env = merge(stepEnvs, env.Cimple())
+	return stepContext
 }
 
-func (command *CommandContext) execute(journal journal.Journal, stdout io.Writer, stderr io.Writer) error {
-	command.logger.Printf("Executing %s %s", command.Cmd, strings.Join(command.Args, " "))
-	var cmd = exec.Command(command.Cmd, command.Args...)
+func (step *StepContext) execute(journal journal.Journal, stdout io.Writer, stderr io.Writer) error {
+	step.logger.Printf("Executing %s %s", step.Cmd, strings.Join(step.Args, " "))
+	var cmd = exec.Command(step.Cmd, step.Args...)
 
 	// Clear out env for command so not to inherit current process's environment.
 	cmd.Env = []string{}
 
 	a := make(map[string]string)
 
-	for k, v := range command.Env {
+	for k, v := range step.Env {
 		// TODO: Extract templating environment variables
 		tmpl, err := template.New("t").Parse(v)
 		if err != nil {
@@ -57,25 +73,25 @@ func (command *CommandContext) execute(journal journal.Journal, stdout io.Writer
 		a[k] = doc.String()
 	}
 
-	journal.Record(commandStarted{Id: command.Id, Env: a, Command: command.Cmd, Args: command.Args})
+	journal.Record(stepStarted{Id: step.Id, Env: a, Step: step.Cmd, Args: step.Args})
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	err := cmd.Run()
 
 	if err != nil {
-		journal.Record(commandFailed{Id: command.Id})
+		journal.Record(stepFailed{Id: step.Id})
 		return err
 	}
 
-	journal.Record(commandSuccessful{Id: command.Id})
+	journal.Record(stepSuccessful{Id: step.Id})
 
 	return nil
 }
 
 type BuildTask struct {
-	Name     string
-	Commands []CommandContext
+	Name  string
+	Steps []StepContext
 }
 
 type Build struct {
@@ -129,16 +145,16 @@ func (build *Build) Run() error {
 	build.config.journal.Record(buildStarted{Repo: build.config.repoInfo})
 
 	for _, task := range build.Tasks {
-		commandIds := []string{}
+		stepIds := []string{}
 
-		for _, command := range task.Commands {
-			commandIds = append(commandIds, command.Id)
+		for _, step := range task.Steps {
+			stepIds = append(stepIds, step.Id)
 		}
 
-		build.config.journal.Record(taskStarted{Id: task.Name, Commands: commandIds})
+		build.config.journal.Record(taskStarted{Id: task.Name, Steps: stepIds})
 
-		for _, command := range task.Commands {
-			err := command.execute(build.config.journal, build.config.logWriter, build.config.logWriter)
+		for _, step := range task.Steps {
+			err := step.execute(build.config.journal, build.config.logWriter, build.config.logWriter)
 			if err != nil {
 				build.config.journal.Record(taskFailed{Id: task.Name})
 				return err
@@ -153,30 +169,30 @@ func (build *Build) Run() error {
 	return nil
 }
 
-func buildCommandContexts(logger *log.Logger, config *BuildConfig, task *project.Task) ([]CommandContext, error) {
-	var contexts []CommandContext
+func buildCommandContexts(logger *log.Logger, config *BuildConfig, task *project.Task) ([]StepContext, error) {
+	var contexts []StepContext
 
 	if task.Skip {
 		logger.Printf("Skipping task: %s", task.Name)
-		return []CommandContext{}, nil
+		return []StepContext{}, nil
 	}
 
 	taskEnvs := merge(config.project.Env, task.Env)
 
-	for k, command := range task.Commands {
-		commandId := fmt.Sprintf("%s-%s", task.Name, k)
+	for k, step := range task.Steps {
+		stepId := fmt.Sprintf("%s-%s", task.Name, k)
 
-		if command.Skip {
-			config.journal.Record(skipCommand{Id: commandId})
+		if step.GetSkip() {
+			config.journal.Record(skipStep{Id: stepId})
 			continue
 		}
 
-		commandContext := newCommandContext(commandId, taskEnvs, &command)
-		commandContext.logger = logging.CreateLogger("Command", config.logWriter)
-		commandContext.Env["CIMPLE_PROJECT_NAME"] = config.project.Name
-		commandContext.Env["CIMPLE_TASK_NAME"] = task.Name
+		stepContext := newStepContext(stepId, taskEnvs, step)
+		stepContext.logger = logging.CreateLogger("Step", config.logWriter)
+		stepContext.Env["CIMPLE_PROJECT_NAME"] = config.project.Name
+		stepContext.Env["CIMPLE_TASK_NAME"] = task.Name
 
-		contexts = append(contexts, *commandContext)
+		contexts = append(contexts, *stepContext)
 	}
 
 	return contexts, nil

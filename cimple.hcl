@@ -3,32 +3,39 @@ cimple {
 }
 
 name = "Cimple"
-description = "Cimple CI"
+description = "Cimple CI build tasks"
 
-task "fix" {
-  env {
-    GOPATH = "{{.WorkingDir}}/_vendor"
+env {
+  GOPATH = "{{index .HostEnvVar \"GOPATH\"}}"
+  GO15VENDOREXPERIMENT = "1"
+  # PATH required for glide command (needs access to Git).
+  # Should PATH always be mapped by default?
+  PATH = "{{index .HostEnvVar \"PATH\"}}"
+}
+
+task fix {
+  script gofmt {
+    body = "go fmt $(go list ./... | grep -v /vendor/)"
   }
 
-  command "gofmt" {
-    command = "go"
-    args = ["fmt", "./..."]
-  }
-
-  command "govet" {
-    command = "go"
-    args = ["vet", "./..."]
+  script govet {
+    body = "go vet $(go list ./... | grep -v /vendor/)"
   }
 }
 
-task "test" {
-  description = "Run Cimple tests"
-  env {
-    GOPATH = "{{.WorkingDir}}/_vendor"
+task test {
+  description = <<DESC
+Runs the Cimple tests.
+
+Prior to running the tests dependencies are installed.
+DESC
+
+  command glide {
+    command = "glide"
+    args = ["install"]
   }
 
-  command "go" {
-    command = "go"
-    args = ["test", "-v", "./...", "-cover"]
+  script gotest {
+    body = "go test -v $(go list ./... | grep -v /vendor/) -cover"
   }
 }

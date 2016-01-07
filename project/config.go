@@ -12,10 +12,30 @@ import (
 type Task struct {
 	Description string
 	Name        string
-	Commands    map[string]Command
+	Steps       map[string]Step
+	StepOrder   []string
 	Archive     []string
 	Env         map[string]string
 	Skip        bool
+}
+
+type Step interface {
+	GetSkip() bool
+	GetEnv() map[string]string
+}
+
+type Script struct {
+	Skip bool
+	Body string
+	Env  map[string]string
+}
+
+func (s Script) GetSkip() bool {
+	return s.Skip
+}
+
+func (s Script) GetEnv() map[string]string {
+	return s.Env
 }
 
 type Command struct {
@@ -23,6 +43,14 @@ type Command struct {
 	Args    []string
 	Env     map[string]string
 	Skip    bool
+}
+
+func (c Command) GetSkip() bool {
+	return c.Skip
+}
+
+func (c Command) GetEnv() map[string]string {
+	return c.Env
 }
 
 type Config struct {
@@ -96,7 +124,7 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 	var task Task
 	task.Name = item.Keys[0].Token.Value().(string)
 	task.Env = make(map[string]string)
-	task.Commands = make(map[string]Command)
+	task.Steps = make(map[string]Step)
 
 	if err := mapstructure.WeakDecode(m, &task); err != nil {
 		return err
@@ -107,8 +135,16 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 		listVal = ot.List
 	}
 
+	task.StepOrder = stepOrder(listVal)
+
 	if o := listVal.Filter("command"); len(o.Items) > 0 {
-		if err := parseCommands(task.Commands, o); err != nil {
+		if err := parseCommands(task.Steps, o); err != nil {
+			return err
+		}
+	}
+
+	if o := listVal.Filter("script"); len(o.Items) > 0 {
+		if err := parseScripts(task.Steps, o); err != nil {
 			return err
 		}
 	}
@@ -124,7 +160,26 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 	return nil
 }
 
-func parseCommands(result map[string]Command, list *ast.ObjectList) error {
+func stepOrder(o *ast.ObjectList) []string {
+	var result []string
+	var keys []string
+	keys = append(keys, "command")
+
+	for _, item := range o.Items {
+		for _, keyItem := range item.Keys {
+			key := keyItem.Token.Value().(string)
+
+			if key == "command" || key == "script" {
+				n := item.Keys[1].Token.Value().(string)
+				result = append(result, n)
+			}
+		}
+	}
+
+	return result
+}
+
+func parseCommands(result map[string]Step, list *ast.ObjectList) error {
 	for _, item := range list.Items {
 		var m map[string]interface{}
 		if err := hcl.DecodeObject(&m, item.Val); err != nil {
@@ -135,6 +190,39 @@ func parseCommands(result map[string]Command, list *ast.ObjectList) error {
 
 		name := item.Keys[0].Token.Value().(string)
 		var c Command
+		c.Env = make(map[string]string)
+		if err := mapstructure.WeakDecode(m, &c); err != nil {
+			log.Fatal(err)
+			return err
+		}
+		result[name] = c
+
+		var listVal *ast.ObjectList
+		if ot, ok := item.Val.(*ast.ObjectType); ok {
+			listVal = ot.List
+		}
+
+		if o := listVal.Filter("env"); len(o.Items) > 0 {
+			if err := parseEnvs(c.Env, o); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func parseScripts(result map[string]Step, list *ast.ObjectList) error {
+	for _, item := range list.Items {
+		var m map[string]interface{}
+		if err := hcl.DecodeObject(&m, item.Val); err != nil {
+			return err
+		}
+
+		delete(m, "env")
+
+		name := item.Keys[0].Token.Value().(string)
+		var c Script
 		c.Env = make(map[string]string)
 		if err := mapstructure.WeakDecode(m, &c); err != nil {
 			log.Fatal(err)
