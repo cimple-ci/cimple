@@ -71,5 +71,54 @@ func TestParse(t *testing.T) {
 	}
 }
 
-// TODO: Test task names are unique
-// TODO: Test step names within a task are unique
+func TestTaskNamesUnique(t *testing.T) {
+	file := "duplicate-task-names.hcl"
+	path, err := filepath.Abs(filepath.Join("./test-fixtures", file))
+	if err != nil {
+		t.Fatalf("File: %s\n\n%s", file, err)
+	}
+
+	_, err = LoadConfig(path)
+	if err == nil {
+		t.Fatalf("file: %s\n\nExpected error due to duplicate task names", file)
+	}
+}
+
+func TestStepNamesUniqueWithinATask(t *testing.T) {
+	file := "duplicate-step-names.hcl"
+	path, err := filepath.Abs(filepath.Join("./test-fixtures", file))
+	if err != nil {
+		t.Fatalf("File: %s\n\n%s", file, err)
+	}
+
+	_, err = LoadConfig(path)
+	if err == nil {
+		t.Fatalf("%s\n\nExpected error due to duplicate step names within a task", file)
+	}
+}
+
+func TestStepNamesContainValidCharacters(t *testing.T) {
+	file := "invalid-step-names.hcl"
+	path, err := filepath.Abs(filepath.Join("./test-fixtures", file))
+	if err != nil {
+		t.Fatalf("File: %s\n\n%s", file, err)
+	}
+
+	_, err = LoadConfig(path)
+	if err == nil {
+		t.Fatalf("file: %s\n\nExpected error due to invalid step names", file)
+	}
+}
+
+func TestTaskNamesContainValidCharacters(t *testing.T) {
+	file := "invalid-task-names.hcl"
+	path, err := filepath.Abs(filepath.Join("./test-fixtures", file))
+	if err != nil {
+		t.Fatalf("File: %s\n\n%s", file, err)
+	}
+
+	_, err = LoadConfig(path)
+	if err == nil {
+		t.Fatalf("file: %s\n\nExpected error due to invalid task names", file)
+	}
+}

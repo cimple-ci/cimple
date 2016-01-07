@@ -1,12 +1,15 @@
 package project
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/mitchellh/mapstructure"
+	"regexp"
+	"strings"
 )
 
 type Task struct {
@@ -64,6 +67,14 @@ type Project struct {
 	Env         map[string]string
 }
 
+type ConfigError struct {
+	Issues []string
+}
+
+func (e *ConfigError) Error() string {
+	return fmt.Sprintf("One or more configuration errors exist:\n%s", strings.Join(e.Issues, "\n"))
+}
+
 func LoadConfig(path string) (*Config, error) {
 	d, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -75,6 +86,19 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
+	cfg, err := parseConfig(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validateConfig(cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func parseConfig(obj *ast.File) (*Config, error) {
 	var m map[string]interface{}
 	if err := hcl.DecodeObject(&m, obj); err != nil {
 		return nil, err
@@ -93,7 +117,7 @@ func LoadConfig(path string) (*Config, error) {
 
 	list, ok := obj.Node.(*ast.ObjectList)
 	if !ok {
-		return nil, err
+		return nil, fmt.Errorf("Node is not an ObjectList")
 	}
 
 	matches := list.Filter("task")
@@ -135,7 +159,11 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 		listVal = ot.List
 	}
 
-	task.StepOrder = stepOrder(listVal)
+	so, err := stepOrder(listVal)
+	if err != nil {
+		return err
+	}
+	task.StepOrder = so
 
 	if o := listVal.Filter("command"); len(o.Items) > 0 {
 		if err := parseCommands(task.Steps, o); err != nil {
@@ -155,15 +183,20 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 		}
 	}
 
+	_, exists := tasks[task.Name]
+	if exists {
+		return &ConfigError{
+			Issues: []string{fmt.Sprintf("A task named %s exists multiple times", task.Name)},
+		}
+	}
+
 	tasks[task.Name] = &task
 
 	return nil
 }
 
-func stepOrder(o *ast.ObjectList) []string {
+func stepOrder(o *ast.ObjectList) ([]string, error) {
 	var result []string
-	var keys []string
-	keys = append(keys, "command")
 
 	for _, item := range o.Items {
 		for _, keyItem := range item.Keys {
@@ -172,14 +205,20 @@ func stepOrder(o *ast.ObjectList) []string {
 			if key == "command" || key == "script" {
 				n := item.Keys[1].Token.Value().(string)
 				result = append(result, n)
+
+				if count(result, n) > 1 {
+					return nil, &ConfigError{
+						Issues: []string{fmt.Sprintf("A step named %s exists multiple times", n)},
+					}
+				}
 			}
 		}
 	}
 
-	return result
+	return result, nil
 }
 
-func parseCommands(result map[string]Step, list *ast.ObjectList) error {
+func parseCommands(steps map[string]Step, list *ast.ObjectList) error {
 	for _, item := range list.Items {
 		var m map[string]interface{}
 		if err := hcl.DecodeObject(&m, item.Val); err != nil {
@@ -195,7 +234,8 @@ func parseCommands(result map[string]Step, list *ast.ObjectList) error {
 			log.Fatal(err)
 			return err
 		}
-		result[name] = c
+
+		steps[name] = c
 
 		var listVal *ast.ObjectList
 		if ot, ok := item.Val.(*ast.ObjectType); ok {
@@ -245,6 +285,36 @@ func parseScripts(result map[string]Step, list *ast.ObjectList) error {
 	return nil
 }
 
+func validateConfig(cfg *Config) error {
+	var issues = []string{}
+
+	if len(cfg.Tasks) == 0 {
+		issues = append(issues, "At least 1 task must be defined")
+	}
+
+	r, _ := regexp.Compile("[a-z0-9_]+")
+
+	for taskName, task := range cfg.Tasks {
+		if !r.MatchString(taskName) {
+			issues = append(issues, fmt.Sprintf("%s is not a valid task name", taskName))
+		}
+
+		for stepName, _ := range task.Steps {
+			if !r.MatchString(stepName) {
+				issues = append(issues, fmt.Sprintf("%s is not a valid step name", stepName))
+			}
+		}
+	}
+
+	if len(issues) > 0 {
+		return &ConfigError{
+			Issues: issues,
+		}
+	}
+
+	return nil
+}
+
 func parseEnvs(result map[string]string, list *ast.ObjectList) error {
 	for _, item := range list.Elem().Items {
 		var m map[string]interface{}
@@ -260,4 +330,14 @@ func parseEnvs(result map[string]string, list *ast.ObjectList) error {
 	}
 
 	return nil
+}
+
+func count(s []string, e string) int {
+	var occurrences = 0
+	for _, a := range s {
+		if a == e {
+			occurrences = occurrences + 1
+		}
+	}
+	return occurrences
 }
