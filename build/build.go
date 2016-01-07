@@ -2,6 +2,7 @@ package build
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -129,11 +130,11 @@ func NewBuild(config *BuildConfig) (*Build, error) {
 			}
 		}
 
-		commandContexts, err := buildCommandContexts(build.logger, config, task)
+		contexts, err := buildStepContexts(build.logger, config, task)
 		if err != nil {
 			return nil, err
 		}
-		buildTask := BuildTask{task.Name, commandContexts}
+		buildTask := BuildTask{task.Name, contexts}
 		build.Tasks = append(build.Tasks, buildTask)
 	}
 
@@ -169,7 +170,7 @@ func (build *Build) Run() error {
 	return nil
 }
 
-func buildCommandContexts(logger *log.Logger, config *BuildConfig, task *project.Task) ([]StepContext, error) {
+func buildStepContexts(logger *log.Logger, config *BuildConfig, task *project.Task) ([]StepContext, error) {
 	var contexts []StepContext
 
 	if task.Skip {
@@ -179,8 +180,15 @@ func buildCommandContexts(logger *log.Logger, config *BuildConfig, task *project
 
 	taskEnvs := merge(config.project.Env, task.Env)
 
-	for k, step := range task.Steps {
-		stepId := fmt.Sprintf("%s-%s", task.Name, k)
+	for _, stepName := range task.StepOrder {
+		step, found := task.Steps[stepName]
+
+		if !found {
+			// TODO: include list of possible step names in error
+			return []StepContext{}, errors.New(fmt.Sprintf("Could not find step named %s.", stepName))
+		}
+
+		stepId := fmt.Sprintf("%s.%s", task.Name, stepName)
 
 		if step.GetSkip() {
 			config.journal.Record(skipStep{Id: stepId})

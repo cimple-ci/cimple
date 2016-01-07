@@ -5,22 +5,19 @@ import (
 	"time"
 )
 
-type record interface {
-}
-
 type Journal interface {
-	Record(record record) error
+	Record(record interface{}) error
 }
 
 type envelope struct {
-	Event     record    `json:"event"`
-	Time      time.Time `json:"time"`
-	EventType string    `json:"type"`
+	Event     interface{} `json:"event"`
+	Time      time.Time   `json:"time"`
+	EventType string      `json:"type"`
 }
 
 type journal struct {
 	writer JournalWriter
-	stream []record
+	stream []interface{}
 }
 
 type JournalWriter interface {
@@ -32,7 +29,7 @@ func NewJournal(writer JournalWriter) Journal {
 	return j
 }
 
-func (journal journal) Record(record record) error {
+func (journal journal) Record(record interface{}) error {
 	envelope := &envelope{
 		Event:     record,
 		Time:      time.Now(),
