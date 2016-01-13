@@ -9,7 +9,6 @@ import (
 	"github.com/lukesmith/cimple/database"
 	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/server/frontend"
-	"github.com/lukesmith/cimple/server/web_application"
 )
 
 type Config struct {
@@ -40,11 +39,7 @@ func (server *Server) Start() error {
 	agents := newAgentPool(server.logger)
 
 	db := database.NewDatabase()
-
-	app := web_application.NewApplication()
-	frontend.RegisterAssets(app)
-	frontend.RegisterHome(app, db)
-	frontend.RegisterProjects(app, db)
+	app := frontend.NewFrontend(db)
 
 	http.Handle("/", app)
 	http.Handle("/agents", agents)

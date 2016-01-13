@@ -1,10 +1,10 @@
 package web_application
 
 import (
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"html/template"
 
 	"github.com/gorilla/mux"
 	"github.com/jchannon/negotiator"
@@ -65,7 +65,6 @@ func (app *Application) Static(path string) *mux.Route {
 func GlobalErrorHandler(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
-
 
 func NewRenderer(helpers *AppHelpers) *render.Render {
 	return render.New(render.Options{

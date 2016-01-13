@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/lukesmith/cimple/server/web_application"
 	"github.com/lukesmith/cimple/database"
+	"github.com/lukesmith/cimple/web_application"
 )
 
 type projectsHandler struct {
@@ -17,7 +17,7 @@ type projectModel struct {
 	ProjectUrl string `json:"project_url"`
 }
 
-func RegisterProjects(app *web_application.Application, db database.CimpleDatabase) {
+func registerProjects(app *web_application.Application, db database.CimpleDatabase) {
 	handler := &projectsHandler{
 		db: db,
 	}
@@ -26,7 +26,7 @@ func RegisterProjects(app *web_application.Application, db database.CimpleDataba
 	app.Handle("/projects/{key}", handler.getDetails).Methods("GET").Name("project")
 }
 
-func(h *projectsHandler) getIndex(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (h *projectsHandler) getIndex(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	projects := h.db.GetProjects()
 
 	model := []*projectModel{}
@@ -39,7 +39,7 @@ func(h *projectsHandler) getIndex(app *web_application.Application, w http.Respo
 	return model, nil
 }
 
-func(h *projectsHandler) getDetails(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (h *projectsHandler) getDetails(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	params := mux.Vars(r)
 	return params["key"], nil
 }

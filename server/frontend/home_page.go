@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/lukesmith/cimple/database"
-	"github.com/lukesmith/cimple/server/web_application"
+	"github.com/lukesmith/cimple/web_application"
 )
 
 type homeHandler struct {
@@ -16,7 +16,7 @@ type homeModel struct {
 	Projects []*database.Project
 }
 
-func RegisterHome(app *web_application.Application, db database.CimpleDatabase) {
+func registerHome(app *web_application.Application, db database.CimpleDatabase) {
 	handler := &homeHandler{
 		db: db,
 	}
@@ -24,7 +24,7 @@ func RegisterHome(app *web_application.Application, db database.CimpleDatabase) 
 	app.Handle("/", handler.getIndex).Methods("GET")
 }
 
-func(h *homeHandler) getIndex(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (h *homeHandler) getIndex(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	a := homeModel{
 		Hello:    "World",
 		Projects: h.db.GetProjects(),
