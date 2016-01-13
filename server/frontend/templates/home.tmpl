@@ -1,0 +1,18 @@
+{{ define "header-home" }}
+<h1>Home</h1>
+
+<span>{{.Hello}}.</span>
+
+<ul>
+{{range .Projects}}
+    <li><a href="{{Url "project" "key" .Name}}">{{.Name}}</a></li>
+{{end}}
+</ul>
+
+<div id="container"></div>
+
+{{ end }}
+
+{{ define "footer-home"}}
+<p>The End</p>
+{{ end }}

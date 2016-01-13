@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/codegangsta/cli"
+
 	"github.com/lukesmith/cimple/build"
 	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/project"

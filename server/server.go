@@ -6,7 +6,10 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/lukesmith/cimple/database"
 	"github.com/lukesmith/cimple/logging"
+	"github.com/lukesmith/cimple/server/frontend"
+	"github.com/lukesmith/cimple/server/web_application"
 )
 
 type Config struct {
@@ -36,6 +39,14 @@ func NewServer(config *Config, logger io.Writer) (*Server, error) {
 func (server *Server) Start() error {
 	agents := newAgentPool(server.logger)
 
+	db := database.NewDatabase()
+
+	app := web_application.NewApplication()
+	frontend.RegisterAssets(app)
+	frontend.RegisterHome(app, db)
+	frontend.RegisterProjects(app, db)
+
+	http.Handle("/", app)
 	http.Handle("/agents", agents)
 
 	go agents.run()

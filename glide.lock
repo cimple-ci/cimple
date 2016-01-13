@@ -1,14 +1,23 @@
-hash: c4f7dbc54f86e7c4fe49510071527a615a694b83a1554a9bc9be891a130afa41
-updated: 2016-01-05T20:08:11.104207789Z
+hash: db55f64136807e5eac598124a2d10ae4c3b8e63e312022f0fd8b0ab4b25f7365
+updated: 2016-01-11T23:39:11.874987394Z
 imports:
 - name: github.com/codegangsta/cli
   version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+- name: github.com/goji/param
+  version: da86c81e3e3c23b1948bc7a003d381250a032aa7
+  repo: https://github.com/goji/param
+- name: github.com/gorilla/context
+  version: 1c83b3eabd45b6d76072b66b746c20815fb2872d
+- name: github.com/gorilla/mux
+  version: 26a6070f849969ba72b72256e9f14cf519751690
 - name: github.com/gorilla/websocket
   version: 3986be78bf859e01f01af631ad76da5b269d270c
 - name: github.com/hashicorp/hcl
   version: 5af5025c48e8bf0e03551b8757d92a774b9f0694
+- name: github.com/jchannon/negotiator
+  version: ce4c1ce489b5afb6d597cb8b2a2c57adf4a01b48
 - name: github.com/mitchellh/mapstructure
   version: 281073eb9eb092240d33ef253c404f1cca550309
 - name: github.com/pmezard/go-difflib
@@ -17,4 +26,9 @@ imports:
   version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
 - name: github.com/stretchr/testify
   version: e3a8ff8ce36581f87a15341206f205b1da467059
+- name: github.com/unrolled/render
+  version: 40a2dfa24398d37b4a14938442a0f4fe4307b929
+- name: github.com/zenazn/goji
+  version: bf843a174a08e846246b8945f8a9a853d84a256a
+  repo: https://github.com/zenazn/goji
 devImports: []

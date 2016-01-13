@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>My Layout</title>
+    <!-- Render the block template called `css-$current_template` here -->
+    {{ block "css" }}
+  </head>
+  <body>
+    This is the {{ current }} page.
+    <!-- render the block template called `header-$current_template` here -->
+    {{ block "header" }}
+    <!-- Render the current template here -->
+    {{ yield }}
+    <!-- render the block template called `footer-$current_template` here -->
+    {{ block "footer" }}
+    <script type="text/babel" src="/assets/js/application.js"></script>
+  </body>
+</html>

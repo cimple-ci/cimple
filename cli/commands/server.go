@@ -23,12 +23,10 @@ func Server() cli.Command {
 				log.Fatal(err)
 			}
 
-			go func() {
-				err = server.Start()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
+			err = server.Start()
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	}
 }

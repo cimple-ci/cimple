@@ -10,8 +10,11 @@ import:
   - package: github.com/codegangsta/cli
   - package: github.com/hashicorp/hcl
   - package: github.com/mitchellh/mapstructure
+  - package: github.com/gorilla/mux
   - package: github.com/gorilla/websocket
+  - package: github.com/unrolled/render
   - package: github.com/stretchr/testify
+  - package: github.com/jchannon/negotiator
   # Get and manage a package with Git:
   #- package: github.com/Masterminds/cookoo
   #  # The repository URL
