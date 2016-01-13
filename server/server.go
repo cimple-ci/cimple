@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/lukesmith/cimple/database"
+	"github.com/lukesmith/cimple/frontend"
 	"github.com/lukesmith/cimple/logging"
-	"github.com/lukesmith/cimple/server/frontend"
 )
 
 type Config struct {

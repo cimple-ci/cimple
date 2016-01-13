@@ -16,7 +16,9 @@ func (fe *frontEnd) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewFrontend(db database.CimpleDatabase) http.Handler {
-	app := web_application.NewApplication()
+	app := web_application.NewApplication(&web_application.ApplicationOptions{
+		ViewsDirectory: "frontend/templates",
+	})
 
 	app.Static("/assets/js/application.js")
 

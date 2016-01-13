@@ -9,30 +9,37 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jchannon/negotiator"
 	"github.com/unrolled/render"
+	"path/filepath"
 )
 
 type handler func(*Application, http.ResponseWriter, *http.Request) (interface{}, error)
+
+type ApplicationOptions struct {
+	ViewsDirectory string
+}
 
 type Application struct {
 	render     *render.Render
 	Router     *mux.Router
 	negotiator *negotiator.Negotiator
+	options    *ApplicationOptions
 }
 
 func (app *Application) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app.Router.ServeHTTP(w, r)
 }
 
-func NewApplication() *Application {
+func NewApplication(options *ApplicationOptions) *Application {
 	router := mux.NewRouter()
 	helpers := NewAppHelper(router)
-	render := NewRenderer(helpers)
+	render := NewRenderer(options, helpers)
 	neg := negotiator.New(NewHtmlResponseProcessor(render))
 
 	return &Application{
 		render:     render,
 		Router:     router,
 		negotiator: neg,
+		options:    options,
 	}
 }
 
@@ -50,7 +57,7 @@ func (app *Application) Handle(path string, handler handler) *mux.Route {
 
 func (app *Application) Static(path string) *mux.Route {
 	return app.Router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		file, err := ioutil.ReadFile("server/frontend/" + r.URL.Path)
+		file, err := ioutil.ReadFile(filepath.Join(app.options.ViewsDirectory, r.URL.Path))
 		if err != nil {
 			GlobalErrorHandler(w, err)
 		} else {
@@ -66,11 +73,11 @@ func GlobalErrorHandler(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func NewRenderer(helpers *AppHelpers) *render.Render {
+func NewRenderer(options *ApplicationOptions, helpers *AppHelpers) *render.Render {
 	return render.New(render.Options{
 		IsDevelopment: true,
 		Layout:        "layout",
-		Directory:     "server/frontend/templates",
+		Directory:     options.ViewsDirectory,
 		Funcs: []template.FuncMap{
 			{"Url": helpers.URL},
 		},
