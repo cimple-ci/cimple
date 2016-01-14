@@ -38,7 +38,7 @@ func NewServer(config *Config, logger io.Writer) (*Server, error) {
 func (server *Server) Start() error {
 	agents := newAgentPool(server.logger)
 
-	db := database.NewDatabase()
+	db := database.NewDatabase("./.cimple")
 	app := frontend.NewFrontend(db)
 
 	http.Handle("/", app)

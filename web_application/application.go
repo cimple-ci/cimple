@@ -4,12 +4,12 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/jchannon/negotiator"
 	"github.com/unrolled/render"
-	"path/filepath"
 )
 
 type handler func(*Application, http.ResponseWriter, *http.Request) (interface{}, error)
@@ -27,6 +27,16 @@ type Application struct {
 
 func (app *Application) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app.Router.ServeHTTP(w, r)
+}
+
+type NotFoundError struct{}
+
+func (nfe *NotFoundError) Error() string {
+	return "Not found"
+}
+
+func NewNotFoundError() error {
+	return &NotFoundError{}
 }
 
 func NewApplication(options *ApplicationOptions) *Application {

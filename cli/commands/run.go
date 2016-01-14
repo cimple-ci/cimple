@@ -29,22 +29,25 @@ func Run() cli.Command {
 		},
 		Action: func(c *cli.Context) {
 			buildId := buildId()
-			fileWriter, err := createOutputPathWriter(buildId)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer fileWriter.Close()
-
-			logWriter := io.MultiWriter(os.Stdout, fileWriter)
 
 			cfg, err := loadConfig()
 			if err != nil {
 				log.Fatal(err)
 			}
 
+			projectName := cfg.Project.Name
+
+			fileWriter, err := createOutputPathWriter(projectName, buildId)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer fileWriter.Close()
+
 			r := loadRepositoryInfo()
 
-			journal, _ := createJournal(buildId)
+			logWriter := io.MultiWriter(os.Stdout, fileWriter)
+
+			journal, _ := createJournal(projectName, buildId)
 			buildConfig := build.NewBuildConfig(buildId, logWriter, journal, cfg, *r)
 			buildConfig.ExplicitTasks = c.StringSlice("task")
 
@@ -87,21 +90,21 @@ func buildId() string {
 	return time.Now().Format(time.RFC3339)
 }
 
-func createJournal(buildId string) (journal.Journal, error) {
-	journalWriter := journal.NewFileJournalWriter(journalPath(buildId))
+func createJournal(projectName string, buildId string) (journal.Journal, error) {
+	journalWriter := journal.NewFileJournalWriter(journalPath(projectName, buildId))
 	journal := journal.NewJournal(journalWriter)
 	return journal, nil
 }
 
-func createOutputPathWriter(buildId string) (*os.File, error) {
-	path := outputPath(buildId)
+func createOutputPathWriter(projectName string, buildId string) (*os.File, error) {
+	path := outputPath(projectName, buildId)
 	dir := filepath.Dir(path)
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
 		return nil, err
 	}
 
-	fileWriter, err := os.Create(outputPath(buildId))
+	fileWriter, err := os.Create(outputPath(projectName, buildId))
 	if err != nil {
 		return nil, err
 	}
@@ -109,14 +112,14 @@ func createOutputPathWriter(buildId string) (*os.File, error) {
 	return fileWriter, nil
 }
 
-func journalPath(runId string) string {
-	return path.Join(cimplePath(runId), "journal")
+func journalPath(projectName string, runId string) string {
+	return path.Join(cimplePath(projectName, runId), "journal")
 }
 
-func outputPath(runId string) string {
-	return path.Join(cimplePath(runId), "output")
+func outputPath(projectName string, runId string) string {
+	return path.Join(cimplePath(projectName, runId), "output")
 }
 
-func cimplePath(runId string) string {
-	return path.Join(".", ".cimple", runId)
+func cimplePath(projectName string, runId string) string {
+	return path.Join(".", ".cimple", projectName, runId)
 }
