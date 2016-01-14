@@ -3,7 +3,11 @@
 {{ end }}
 
 <div id="container">
-//TODO: List the builds
+  <ul>
+  {{range .Builds}}
+      <li><a href="{{ .BuildUrl }}">{{.Date}}</a></li>
+  {{end}}
+  </ul>
 </div>
 
 {{ define "footer-project" }}

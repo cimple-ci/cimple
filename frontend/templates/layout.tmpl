@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>My Layout</title>
     <!-- Render the block template called `css-$current_template` here -->
+    <link rel="stylesheet" type="text/css" href="/assets/css/prism.css">
     {{ block "css" }}
   </head>
   <body>
@@ -14,6 +15,7 @@
     {{ yield }}
     <!-- render the block template called `footer-$current_template` here -->
     {{ block "footer" }}
+    <script src="/assets/js/prism.js"></script>
     <script src="/assets/js/application.js"></script>
   </body>
 </html>

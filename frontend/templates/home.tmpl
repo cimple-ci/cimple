@@ -3,15 +3,15 @@
 
 <span>{{.Hello}}.</span>
 
-<ul>
-{{range .Projects}}
-    <li><a href="{{Url "project" "key" .Name}}">{{.Name}}</a> - {{.BuildCount}} Builds</li>
-{{end}}
-</ul>
-
 {{ end }}
 
-<div id="container"></div>
+<div id="container">
+  <ul>
+  {{range .Projects}}
+      <li><a href="{{Url "project" "key" .Name}}">{{.Name}}</a> - {{.BuildCount}} Builds</li>
+  {{end}}
+  </ul>
+</div>
 
 {{ define "footer-home"}}
 <p>The End</p>

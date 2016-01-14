@@ -1,0 +1,11 @@
+{{ define "header-build" }}
+<h1>{{ .Id }}</h1>
+{{ end }}
+
+<div id="container">
+  <pre><code class="language-bash">{{ .BuildOutput }}</code></pre>
+</div>
+
+{{ define "footer-build" }}
+<p>The End</p>
+{{ end }}

@@ -10,12 +10,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jchannon/negotiator"
 	"github.com/unrolled/render"
+	"log"
 )
 
 type handler func(*Application, http.ResponseWriter, *http.Request) (interface{}, error)
 
 type ApplicationOptions struct {
-	ViewsDirectory string
+	ViewsDirectory  string
+	AssetsDirectory string
 }
 
 type Application struct {
@@ -65,14 +67,18 @@ func (app *Application) Handle(path string, handler handler) *mux.Route {
 	})
 }
 
-func (app *Application) Static(path string) *mux.Route {
-	return app.Router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		file, err := ioutil.ReadFile(filepath.Join(app.options.ViewsDirectory, r.URL.Path))
+func (app *Application) Asset(path string) *mux.Route {
+	assetPath := filepath.Join("/", filepath.Base(app.options.AssetsDirectory), path)
+	return app.Router.HandleFunc(assetPath, func(w http.ResponseWriter, r *http.Request) {
+		file, err := ioutil.ReadFile(filepath.Join(app.options.AssetsDirectory, path))
 		if err != nil {
 			GlobalErrorHandler(w, err)
 		} else {
-			if strings.HasSuffix(r.URL.Path, ".js") {
+			if strings.HasSuffix(path, ".js") {
 				w.Header().Add("Content-Type", "application/javascript")
+			}
+			if strings.HasSuffix(path, ".css") {
+				w.Header().Add("Content-Type", "text/css")
 			}
 			w.Write(file)
 		}
@@ -80,6 +86,7 @@ func (app *Application) Static(path string) *mux.Route {
 }
 
 func GlobalErrorHandler(w http.ResponseWriter, err error) {
+	log.Printf("Frontend: %+v", err)
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 

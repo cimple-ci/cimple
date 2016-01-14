@@ -1,5 +1,5 @@
 hash: db55f64136807e5eac598124a2d10ae4c3b8e63e312022f0fd8b0ab4b25f7365
-updated: 2016-01-11T23:39:11.874987394Z
+updated: 2016-01-14T20:39:13.083212795Z
 imports:
 - name: github.com/codegangsta/cli
   version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
@@ -7,7 +7,6 @@ imports:
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
 - name: github.com/goji/param
   version: da86c81e3e3c23b1948bc7a003d381250a032aa7
-  repo: https://github.com/goji/param
 - name: github.com/gorilla/context
   version: 1c83b3eabd45b6d76072b66b746c20815fb2872d
 - name: github.com/gorilla/mux
@@ -30,5 +29,4 @@ imports:
   version: 40a2dfa24398d37b4a14938442a0f4fe4307b929
 - name: github.com/zenazn/goji
   version: bf843a174a08e846246b8945f8a9a853d84a256a
-  repo: https://github.com/zenazn/goji
 devImports: []
