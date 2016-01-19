@@ -1,5 +1,5 @@
-hash: db55f64136807e5eac598124a2d10ae4c3b8e63e312022f0fd8b0ab4b25f7365
-updated: 2016-01-14T20:39:13.083212795Z
+hash: 08add570abd08f5a149fc77663908f5b2ec6667127e824b1b99e6161efe22cac
+updated: 2016-01-18T22:47:33.330182827Z
 imports:
 - name: github.com/codegangsta/cli
   version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
@@ -21,6 +21,8 @@ imports:
   version: 281073eb9eb092240d33ef253c404f1cca550309
 - name: github.com/pmezard/go-difflib
   version: e8554b8641db39598be7f6342874b958f12ae1d4
+- name: github.com/satori/go.uuid
+  version: d41af8bb6a7704f00bc3b7cba9355ae6a5a80048
 - name: github.com/stretchr/objx
   version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
 - name: github.com/stretchr/testify

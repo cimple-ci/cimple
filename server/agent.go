@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/satori/go.uuid"
 	"log"
 	"net"
 	"time"
@@ -14,6 +15,7 @@ const (
 )
 
 type agent struct {
+	id     uuid.UUID
 	socket *websocket.Conn
 	pool   *agentpool
 }
@@ -25,7 +27,7 @@ func (c *agent) send(msg []byte) error {
 func (c *agent) read(logger *log.Logger) {
 	defer c.socket.Close()
 	c.socket.SetPingHandler(func(appData string) error {
-		logger.Printf("Ping: Recieved - %s", appData)
+		logger.Printf("Ping: Recieved - %s from %s", appData, c.id)
 		err := c.socket.WriteControl(websocket.PongMessage, []byte("message"), time.Now().Add(writeWait))
 		if err == websocket.ErrCloseSent {
 			return nil

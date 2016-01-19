@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/satori/go.uuid"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -24,10 +26,10 @@ func (a *agentpool) run() {
 		select {
 		case agent := <-a.join:
 			a.agents[agent] = true
-			a.logger.Print("Agent joined")
+			a.logger.Printf("Agent %s joined", agent.id)
 		case agent := <-a.leave:
 			delete(a.agents, agent)
-			a.logger.Print("Agent left")
+			a.logger.Printf("Agent %s left", agent.id)
 		}
 	}
 }
@@ -49,7 +51,15 @@ func (s *agentpool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.logger.Print(err)
 	}
 
+	agentId, err := uuid.FromString(r.URL.Query().Get("id"))
+	if err != nil {
+		s.logger.Printf("Id in request (%s) is not a valid uuid.", r.URL.Query().Get("id"))
+		// TODO: Return relevant status code
+		return
+	}
+
 	agent := &agent{
+		id:     agentId,
 		socket: socket,
 		pool:   s,
 	}

@@ -10,8 +10,8 @@ import (
 
 func Agent() cli.Command {
 	return cli.Command{
-		Name:    "server",
-		Aliases: []string{"s"},
+		Name:    "agent",
+		Aliases: []string{"a"},
 		Usage:   "Start the Cimple agent",
 		Action: func(c *cli.Context) {
 			log.Printf("agent")
@@ -19,13 +19,14 @@ func Agent() cli.Command {
 			agentConfig, err := agent.DefaultConfig()
 			agentConfig.ServerPort = "8080"
 			agent, err := agent.NewAgent(agentConfig, os.Stdout)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-			go func() {
-				err = agent.Start()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
+			err = agent.Start()
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	}
 }

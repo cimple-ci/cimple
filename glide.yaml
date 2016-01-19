@@ -15,6 +15,7 @@ import:
   - package: github.com/unrolled/render
   - package: github.com/stretchr/testify
   - package: github.com/jchannon/negotiator
+  - package: github.com/satori/go.uuid
   # Get and manage a package with Git:
   #- package: github.com/Masterminds/cookoo
   #  # The repository URL

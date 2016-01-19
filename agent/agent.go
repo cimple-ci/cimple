@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/lukesmith/cimple/logging"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -31,13 +32,19 @@ func DefaultConfig() (*Config, error) {
 }
 
 type Agent struct {
+	Id         uuid.UUID
 	config     *Config
 	logger     *log.Logger
 	serverConn *websocket.Conn
 }
 
+func (a *Agent) String() string {
+	return a.Id.String()
+}
+
 func NewAgent(config *Config, logger io.Writer) (*Agent, error) {
 	a := &Agent{
+		Id:     uuid.NewV4(),
 		config: config,
 		logger: logging.CreateLogger("Agent", logger),
 	}
@@ -46,7 +53,9 @@ func NewAgent(config *Config, logger io.Writer) (*Agent, error) {
 }
 
 func (agent *Agent) Start() error {
-	url := fmt.Sprintf("ws://localhost:%s/agents", agent.config.ServerPort)
+	agent.logger.Printf("Starting agent %s", agent)
+
+	url := fmt.Sprintf("ws://localhost:%s/agents?id=%s", agent.config.ServerPort, agent.Id)
 	c, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		return err
@@ -67,7 +76,6 @@ func (agent *Agent) Start() error {
 	}()
 
 	agent.Register()
-
 	agent.pingServer()
 
 	return nil

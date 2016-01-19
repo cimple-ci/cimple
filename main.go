@@ -14,6 +14,7 @@ func main() {
 	app.Commands = []cli.Command{
 		cimpleCli.Run(),
 		cimpleCli.Server(),
+		cimpleCli.Agent(),
 		cimpleCli.Config(),
 	}
 
