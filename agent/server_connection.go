@@ -6,11 +6,12 @@ import (
 	"github.com/satori/go.uuid"
 	"log"
 	"time"
+	"github.com/lukesmith/cimple/messages"
 )
 
 type ServerConnection interface {
-	SendMessage(env *Envelope) error
-	ReadMessage(env *Envelope) error
+	SendMessage(env *messages.Envelope) error
+	ReadMessage(env *messages.Envelope) error
 	Close() error
 }
 
@@ -32,11 +33,11 @@ func newWebsocketServerConnection(socket *websocket.Conn, logger *log.Logger) *s
 	return conn
 }
 
-func (a *serverConnection) ReadMessage(env *Envelope) error {
+func (a *serverConnection) ReadMessage(env *messages.Envelope) error {
 	return a.decoder.Decode(env)
 }
 
-func (a *serverConnection) SendMessage(env *Envelope) error {
+func (a *serverConnection) SendMessage(env *messages.Envelope) error {
 	return a.encoder.Encode(env)
 }
 

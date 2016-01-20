@@ -6,11 +6,12 @@ import (
 	"log"
 	"net"
 	"time"
+	"github.com/lukesmith/cimple/messages"
 )
 
 type AgentConnection interface {
-	SendMessage(env *Envelope) error
-	ReadMessage(env *Envelope) error
+	SendMessage(env *messages.Envelope) error
+	ReadMessage(env *messages.Envelope) error
 	Close() error
 }
 
@@ -44,11 +45,11 @@ func newWebsocketAgentConnection(socket *websocket.Conn, logger *log.Logger) *ag
 	return conn
 }
 
-func (a *agentConnection) ReadMessage(env *Envelope) error {
+func (a *agentConnection) ReadMessage(env *messages.Envelope) error {
 	return a.decoder.Decode(env)
 }
 
-func (a *agentConnection) SendMessage(env *Envelope) error {
+func (a *agentConnection) SendMessage(env *messages.Envelope) error {
 	return a.encoder.Encode(env)
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"log"
 	"reflect"
+	"github.com/lukesmith/cimple/messages"
 )
 
 const (
@@ -33,7 +34,7 @@ func (a *agent) String() string {
 }
 
 func (c *agent) send(msg interface{}) error {
-	env := &Envelope{
+	env := &messages.Envelope{
 		Id:   uuid.NewV4(),
 		Body: msg,
 	}
@@ -44,8 +45,8 @@ func (c *agent) send(msg interface{}) error {
 	return c.conn.SendMessage(env)
 }
 
-func (a *agent) read() (Envelope, error) {
-	var m Envelope
+func (a *agent) read() (messages.Envelope, error) {
+	var m messages.Envelope
 	if err := a.conn.ReadMessage(&m); err == nil {
 		return m, nil
 	} else {
@@ -60,7 +61,7 @@ func (agent *agent) listen(logger *log.Logger) {
 		if msg, err := agent.read(); err == nil {
 			name := reflect.TypeOf(msg.Body).Name()
 			logger.Printf("Received %s:%s from agent:%s", name, msg.Id, agent)
-			agent.send(&ConfirmationMessage{
+			agent.send(&messages.ConfirmationMessage{
 				ConfirmedId: msg.Id,
 				Text:        "Thankyou from server"})
 		} else {

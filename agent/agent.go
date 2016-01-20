@@ -11,6 +11,7 @@ import (
 	"github.com/satori/go.uuid"
 	"os"
 	"reflect"
+	"github.com/lukesmith/cimple/messages"
 )
 
 const (
@@ -38,6 +39,7 @@ type Agent struct {
 	config *Config
 	logger *log.Logger
 	conn   *serverConnection
+	router *messages.Router
 }
 
 func (a *Agent) String() string {
@@ -45,7 +47,7 @@ func (a *Agent) String() string {
 }
 
 func (c *Agent) send(msg interface{}) error {
-	env := &Envelope{
+	env := &messages.Envelope{
 		Id:   uuid.NewV4(),
 		Body: msg,
 	}
@@ -56,8 +58,8 @@ func (c *Agent) send(msg interface{}) error {
 	return c.conn.SendMessage(env)
 }
 
-func (a *Agent) read() (Envelope, error) {
-	var m Envelope
+func (a *Agent) read() (messages.Envelope, error) {
+	var m messages.Envelope
 	if err := a.conn.ReadMessage(&m); err == nil {
 		return m, nil
 	} else {
@@ -70,6 +72,7 @@ func NewAgent(config *Config, logger io.Writer) (*Agent, error) {
 		Id:     uuid.NewV4(),
 		config: config,
 		logger: logging.CreateLogger("Agent", logger),
+		router: messages.NewRouter(),
 	}
 
 	return a, nil
@@ -85,6 +88,11 @@ func (agent *Agent) Start() error {
 	}
 	agent.conn = newWebsocketServerConnection(c, agent.logger)
 
+	agent.router.On(messages.ConfirmationMessage{}, func (m interface{}) {
+		msg := m.(messages.ConfirmationMessage)
+		agent.logger.Printf("Confirmed %s", msg.Text)
+	})
+
 	defer agent.conn.Close()
 
 	go func() {
@@ -96,6 +104,7 @@ func (agent *Agent) Start() error {
 			} else {
 				name := reflect.TypeOf(msg.Body).Name()
 				agent.logger.Printf("Received %s:%s", name, msg.Id)
+				agent.router.Route(msg.Body)
 			}
 		}
 	}()
@@ -108,7 +117,7 @@ func (agent *Agent) Start() error {
 
 func (agent Agent) Register() error {
 	hostname, _ := os.Hostname()
-	return agent.send(&RegisterAgentMessage{
+	return agent.send(&messages.RegisterAgentMessage{
 		Hostname: hostname,
 	})
 }

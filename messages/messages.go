@@ -1,4 +1,4 @@
-package agent
+package messages
 
 import (
 	"encoding/gob"
