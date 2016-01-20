@@ -4,9 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/satori/go.uuid"
-
 	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -58,15 +57,12 @@ func (s *agentpool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agent := &agent{
-		id:     agentId,
-		socket: socket,
-		pool:   s,
-	}
+	conn := newWebsocketAgentConnection(socket, s.logger)
+	agent := newAgent(agentId, conn, s.logger)
 
 	s.join <- agent
 	defer func() {
 		s.leave <- agent
 	}()
-	agent.read(s.logger)
+	agent.listen(s.logger)
 }

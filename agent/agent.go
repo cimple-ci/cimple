@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/lukesmith/cimple/logging"
 	"github.com/satori/go.uuid"
+	"os"
+	"reflect"
 )
 
 const (
@@ -32,14 +34,35 @@ func DefaultConfig() (*Config, error) {
 }
 
 type Agent struct {
-	Id         uuid.UUID
-	config     *Config
-	logger     *log.Logger
-	serverConn *websocket.Conn
+	Id     uuid.UUID
+	config *Config
+	logger *log.Logger
+	conn   *serverConnection
 }
 
 func (a *Agent) String() string {
 	return a.Id.String()
+}
+
+func (c *Agent) send(msg interface{}) error {
+	env := &Envelope{
+		Id:   uuid.NewV4(),
+		Body: msg,
+	}
+
+	name := reflect.TypeOf(msg).Elem().Name()
+	c.logger.Printf("Sending %s:%s", name, env.Id)
+
+	return c.conn.SendMessage(env)
+}
+
+func (a *Agent) read() (Envelope, error) {
+	var m Envelope
+	if err := a.conn.ReadMessage(&m); err == nil {
+		return m, nil
+	} else {
+		return m, err
+	}
 }
 
 func NewAgent(config *Config, logger io.Writer) (*Agent, error) {
@@ -60,50 +83,32 @@ func (agent *Agent) Start() error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	agent.conn = newWebsocketServerConnection(c, agent.logger)
 
-	agent.serverConn = c
+	defer agent.conn.Close()
 
 	go func() {
-		defer c.Close()
+		defer agent.conn.Close()
 		for {
-			_, message, err := c.ReadMessage()
+			msg, err := agent.read()
 			if err != nil {
-				agent.logger.Print(err)
+				agent.logger.Printf("Err reading: %+v", err)
+			} else {
+				name := reflect.TypeOf(msg.Body).Name()
+				agent.logger.Printf("Received %s:%s", name, msg.Id)
 			}
-			agent.logger.Printf("agent recv: %s", message)
 		}
 	}()
 
 	agent.Register()
-	agent.pingServer()
+	agent.conn.PingServer(agent.Id)
 
 	return nil
 }
 
-func (agent *Agent) pingServer() {
-	ticker := time.NewTicker(pingPeriod)
-	defer ticker.Stop()
-
-	ws := agent.serverConn
-
-	ws.SetPongHandler(func(appData string) error {
-		agent.logger.Printf("Pong: Agent rcv pong from server %s", appData)
-		return nil
-	})
-
-	for {
-		select {
-		case <-ticker.C:
-			agent.logger.Print("Ping: Sending")
-			ws.SetWriteDeadline(time.Now().Add(pongWait))
-			if err := ws.WriteMessage(websocket.PingMessage, []byte("From agent")); err != nil {
-				agent.logger.Println("Ping: ", err)
-			}
-		}
-	}
-}
-
 func (agent Agent) Register() error {
-	return agent.serverConn.WriteMessage(websocket.TextMessage, []byte("Registering"))
+	hostname, _ := os.Hostname()
+	return agent.send(&RegisterAgentMessage{
+		Hostname: hostname,
+	})
 }

@@ -2,11 +2,10 @@ package server
 
 import (
 	"github.com/satori/go.uuid"
-	"log"
-	"net"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"log"
+	"reflect"
 )
 
 const (
@@ -16,31 +15,54 @@ const (
 
 type agent struct {
 	id     uuid.UUID
-	socket *websocket.Conn
-	pool   *agentpool
+	conn   AgentConnection
+	logger *log.Logger
 }
 
-func (c *agent) send(msg []byte) error {
-	return c.socket.WriteMessage(websocket.TextMessage, msg)
+func newAgent(agentId uuid.UUID, conn AgentConnection, logger *log.Logger) *agent {
+	agent := &agent{
+		id:     agentId,
+		conn:   conn,
+		logger: logger,
+	}
+	return agent
 }
 
-func (c *agent) read(logger *log.Logger) {
-	defer c.socket.Close()
-	c.socket.SetPingHandler(func(appData string) error {
-		logger.Printf("Ping: Recieved - %s from %s", appData, c.id)
-		err := c.socket.WriteControl(websocket.PongMessage, []byte("message"), time.Now().Add(writeWait))
-		if err == websocket.ErrCloseSent {
-			return nil
-		} else if e, ok := err.(net.Error); ok && e.Temporary() {
-			return nil
-		}
-		return err
-	})
+func (a *agent) String() string {
+	return a.id.String()
+}
+
+func (c *agent) send(msg interface{}) error {
+	env := &Envelope{
+		Id:   uuid.NewV4(),
+		Body: msg,
+	}
+
+	name := reflect.TypeOf(msg).Elem().Name()
+	c.logger.Printf("Sending %s:%s to agent:%s", name, env.Id, c)
+
+	return c.conn.SendMessage(env)
+}
+
+func (a *agent) read() (Envelope, error) {
+	var m Envelope
+	if err := a.conn.ReadMessage(&m); err == nil {
+		return m, nil
+	} else {
+		return m, err
+	}
+}
+
+func (agent *agent) listen(logger *log.Logger) {
+	defer agent.conn.Close()
 
 	for {
-		if _, msg, err := c.socket.ReadMessage(); err == nil {
-			logger.Printf("Server rcv: %s", msg)
-			c.send([]byte("Thankyou from server"))
+		if msg, err := agent.read(); err == nil {
+			name := reflect.TypeOf(msg.Body).Name()
+			logger.Printf("Received %s:%s from agent:%s", name, msg.Id, agent)
+			agent.send(&ConfirmationMessage{
+				ConfirmedId: msg.Id,
+				Text:        "Thankyou from server"})
 		} else {
 			log.Printf("uhoh - %s", err)
 			break
