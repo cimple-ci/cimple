@@ -3,10 +3,10 @@ package server
 import (
 	"encoding/gob"
 	"github.com/gorilla/websocket"
+	"github.com/lukesmith/cimple/messages"
 	"log"
 	"net"
 	"time"
-	"github.com/lukesmith/cimple/messages"
 )
 
 type AgentConnection interface {

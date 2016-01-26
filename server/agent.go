@@ -4,9 +4,9 @@ import (
 	"github.com/satori/go.uuid"
 	"time"
 
+	"github.com/lukesmith/cimple/messages"
 	"log"
 	"reflect"
-	"github.com/lukesmith/cimple/messages"
 )
 
 const (

@@ -8,10 +8,12 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/lukesmith/cimple/logging"
+	"github.com/lukesmith/cimple/messages"
+	"github.com/lukesmith/cimple/vcs/git"
 	"github.com/satori/go.uuid"
+	"io/ioutil"
 	"os"
 	"reflect"
-	"github.com/lukesmith/cimple/messages"
 )
 
 const (
@@ -88,7 +90,34 @@ func (agent *Agent) Start() error {
 	}
 	agent.conn = newWebsocketServerConnection(c, agent.logger)
 
-	agent.router.On(messages.ConfirmationMessage{}, func (m interface{}) {
+	agent.router.On(messages.BuildGitRepository{}, func(m interface{}) {
+		msg := m.(messages.BuildGitRepository)
+		agent.logger.Printf("Building git repo:%s", msg.Url)
+
+		pat, err := ioutil.TempDir("", "")
+		if err != nil {
+			agent.logger.Printf("Err %+v", err)
+		}
+
+		agent.logger.Printf("Creating dir %s", pat)
+		err = os.MkdirAll(pat, 0755)
+		if err != nil {
+			agent.logger.Printf("Err %+v", err)
+		}
+
+		cloneOptions := git.NewCloneOptions(msg.Url, pat)
+		err = git.Clone(cloneOptions, os.Stdout)
+		if err != nil {
+			agent.logger.Printf("Err during clone %+v", err)
+		}
+
+		checkoutOptions := git.NewCheckoutOptions(pat, msg.Commit)
+		err = git.Checkout(checkoutOptions, os.Stdout)
+		if err != nil {
+			agent.logger.Printf("Err during checkout %+v", err)
+		}
+	})
+	agent.router.On(messages.ConfirmationMessage{}, func(m interface{}) {
 		msg := m.(messages.ConfirmationMessage)
 		agent.logger.Printf("Confirmed %s", msg.Text)
 	})
