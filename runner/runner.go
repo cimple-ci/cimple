@@ -32,7 +32,7 @@ func Run(explicitTasks []string) {
 
 	r := loadRepositoryInfo()
 
-	logWriter := io.MultiWriter(os.Stdout, fileWriter)
+	logWriter := io.MultiWriter(os.Stderr, fileWriter)
 
 	journal, _ := createJournal(projectName, buildId)
 	buildConfig := build.NewBuildConfig(buildId, logWriter, journal, cfg, *r)
