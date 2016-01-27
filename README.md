@@ -8,6 +8,10 @@
 
 To run Cimple against itself run `go run main.go run`.
 
+### Building Cimple
+
+To build a release binary of the Cimple command line run `make build`
+
 ## Documentation
 
 ### Project Configuration
