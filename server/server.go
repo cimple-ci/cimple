@@ -40,9 +40,11 @@ func (server *Server) Start() error {
 
 	db := database.NewDatabase("./.cimple")
 	app := frontend.NewFrontend(db)
+	hooks := NewHooks(agents)
 
 	http.Handle("/", app)
 	http.Handle("/agents", agents)
+	http.Handle("/hooks", hooks)
 
 	go agents.run()
 
