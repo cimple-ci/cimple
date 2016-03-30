@@ -5,16 +5,16 @@
     <title>My Layout</title>
     <!-- Render the block template called `css-$current_template` here -->
     <link rel="stylesheet" type="text/css" href="/assets/css/prism.css">
-    {{ block "css" }}
+    {{ partial "css" }}
   </head>
   <body>
     This is the {{ current }} page.
     <!-- render the block template called `header-$current_template` here -->
-    {{ block "header" }}
+    {{ partial "header" }}
     <!-- Render the current template here -->
     {{ yield }}
     <!-- render the block template called `footer-$current_template` here -->
-    {{ block "footer" }}
+    {{ partial "footer" }}
     <script src="/assets/js/prism.js"></script>
     <script src="/assets/js/application.js"></script>
   </body>

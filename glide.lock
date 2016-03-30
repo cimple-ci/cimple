@@ -1,5 +1,5 @@
 hash: 16f7e15ab6468122cd43d9d171fdacf6eda98e68d7df08c3fbacca28d457ea34
-updated: 2016-03-30T19:55:35.148422753+01:00
+updated: 2016-03-30T20:14:50.746761719+01:00
 imports:
 - name: github.com/codegangsta/cli
   version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
@@ -40,7 +40,7 @@ imports:
 - name: github.com/stretchr/testify
   version: e3a8ff8ce36581f87a15341206f205b1da467059
 - name: github.com/unrolled/render
-  version: 40a2dfa24398d37b4a14938442a0f4fe4307b929
+  version: 198ad4d8b8a4612176b804ca10555b222a086b40
 - name: gopkg.in/mcuadros/go-syslog.v2
   version: 6cba2bfcf64a025c899aa3be061161d2b89d8b54
   subpackages:
