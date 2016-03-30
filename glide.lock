@@ -1,5 +1,5 @@
-hash: 16f7e15ab6468122cd43d9d171fdacf6eda98e68d7df08c3fbacca28d457ea34
-updated: 2016-03-30T20:14:50.746761719+01:00
+hash: 4a82efee7342ebdfb4beba78dcc3b6e7af51d27d9477affa5efe78048675a1b2
+updated: 2016-03-30T21:01:01.726490743+01:00
 imports:
 - name: github.com/codegangsta/cli
   version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
@@ -29,6 +29,8 @@ imports:
   subpackages:
   - rfc3164
   - rfc5424
+- name: github.com/laher/goxc
+  version: 7ad26178a06b217fa3a4163bea2e129bbf0c0f2e
 - name: github.com/lukesmith/syslog
   version: 831d1160c842922c89660c9532c0e78a12a4281c
 - name: github.com/mcuadros/go-syslog
@@ -38,7 +40,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: d41af8bb6a7704f00bc3b7cba9355ae6a5a80048
 - name: github.com/stretchr/testify
-  version: e3a8ff8ce36581f87a15341206f205b1da467059
+  version: 6fe211e493929a8aac0469b93f28b1d0688a9a3a
 - name: github.com/unrolled/render
   version: 198ad4d8b8a4612176b804ca10555b222a086b40
 - name: gopkg.in/mcuadros/go-syslog.v2

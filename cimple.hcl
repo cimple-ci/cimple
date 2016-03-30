@@ -39,3 +39,15 @@ DESC
     body = "go test -v $(go list ./... | grep -v /vendor/) -cover"
   }
 }
+
+task package {
+  description = <<DESC
+Packages Cimple for release
+DESC
+
+  skip = true
+
+  command goxc {
+    command = "goxc"
+  }
+}

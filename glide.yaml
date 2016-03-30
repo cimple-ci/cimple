@@ -19,6 +19,7 @@ import:
   - package: github.com/mcuadros/go-syslog
   - package: github.com/crewjam/rfc5424
   - package: github.com/lukesmith/syslog
+  - package: github.com/laher/goxc
   # Get and manage a package with Git:
   #- package: github.com/Masterminds/cookoo
   #  # The repository URL
