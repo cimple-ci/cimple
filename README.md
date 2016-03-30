@@ -95,6 +95,24 @@ script gotest {
 }
 ```
 
+### Running a Server/Agent
+
+The Cimple CLI can be run in either Server mode or Agent mode.
+
+```shell
+cimple server
+cimple agent
+```
+
+#### Triggering builds
+
+When running in Server/Agent mode the Server will schedule tasks across the available agent pool.
+
+By design the Server does not poll or listen to hooks from SCM systems. Instead external processes send builds into the
+Cimple Server.
+
+See `scripts/trigger_build.sh` for an example of how a build can be pushed into Cimple Server.
+
 ### Help
 
 To get help on the Cimple commands run `cimple --help`.

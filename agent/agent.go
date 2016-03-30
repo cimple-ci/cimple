@@ -30,6 +30,7 @@ const (
 )
 
 type Config struct {
+	ServerAddr string
 	ServerPort string
 }
 
@@ -85,26 +86,28 @@ func NewAgent(config *Config, logger io.Writer) (*Agent, error) {
 func (agent *Agent) Start() error {
 	agent.logger.Printf("Starting agent %s", agent)
 
-	url := fmt.Sprintf("ws://localhost:%s/agents?id=%s", agent.config.ServerPort, agent.Id)
+	url := fmt.Sprintf("ws://%s:%s/agents?id=%s", agent.config.ServerAddr, agent.config.ServerPort, agent.Id)
 	c, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		return err
 	}
 	agent.conn = newWebsocketServerConnection(c, agent.logger)
 
-	s, err := syslog.Dial("tcp", "0.0.0.0:1514", syslog.LOG_INFO, "Agent", nil)
+	syslogUrl := fmt.Sprintf("%s:1514", agent.config.ServerAddr)
+
+	s, err := syslog.Dial("tcp", syslogUrl, syslog.LOG_INFO, "Agent", nil)
 	if err != nil {
 		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
 	}
 	defer s.Close()
 
-	sOut, err := syslog.Dial("tcp", "0.0.0.0:1514", syslog.LOG_INFO, "Runner", nil)
+	sOut, err := syslog.Dial("tcp", syslogUrl, syslog.LOG_INFO, "Runner", nil)
 	if err != nil {
 		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
 	}
 	defer sOut.Close()
 
-	sErr, err := syslog.Dial("tcp", "0.0.0.0:1514", syslog.LOG_DEBUG, "Runner", nil)
+	sErr, err := syslog.Dial("tcp", syslogUrl, syslog.LOG_DEBUG, "Runner", nil)
 	if err != nil {
 		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
 	}
@@ -143,7 +146,7 @@ func (agent *Agent) Start() error {
 		errWriter := io.MultiWriter(os.Stderr)
 
 		// TODO: forward stdout as journal messages, stderr as syslog to server
-		err = executeCimpleRun(pat, outWriter, errWriter)
+		err = executeCimpleRun(pat, outWriter, errWriter, syslogUrl)
 		if err != nil {
 			agent.logger.Printf("Err performing Cimple run %+v", err)
 		}
@@ -182,8 +185,8 @@ func (agent Agent) Register() error {
 	})
 }
 
-func executeCimpleRun(workingDir string, stdout io.Writer, stderr io.Writer) error {
-	args := []string{"run", "--syslog", "0.0.0.0:1514"}
+func executeCimpleRun(workingDir string, stdout io.Writer, stderr io.Writer, syslogUrl string) error {
+	args := []string{"run", "--syslog", syslogUrl}
 	var cmd = exec.Command("cimple", args...)
 	cmd.Dir = workingDir
 	cmd.Stdout = stdout
