@@ -4,7 +4,8 @@ import "testing"
 
 func TestJournalFileRecord(t *testing.T) {
 	writer := &testWriter{}
-	journal := NewJournal(writer)
+	writers := []JournalWriter{writer}
+	journal := NewJournal(writers)
 	event := &testEvent{}
 	err := journal.Record(event)
 	if err != nil {

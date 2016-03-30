@@ -9,12 +9,17 @@ import (
 	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/project"
 	"github.com/lukesmith/cimple/vcs"
+	"github.com/lukesmith/syslog"
 	"path"
 	"path/filepath"
 	"time"
 )
 
-func Run(explicitTasks []string) {
+type RunOptions struct {
+	LogServer string
+}
+
+func Run(options *RunOptions, explicitTasks []string) {
 	buildId := buildId()
 
 	cfg, err := loadConfig()
@@ -32,9 +37,26 @@ func Run(explicitTasks []string) {
 
 	r := loadRepositoryInfo()
 
-	logWriter := io.MultiWriter(os.Stderr, fileWriter)
+	writers := []io.Writer{os.Stderr, fileWriter}
 
-	journal, _ := createJournal(projectName, buildId)
+	journalFileWriter := journal.NewFileJournalWriter(journalPath(projectName, buildId))
+	journalWriters := []journal.JournalWriter{journalFileWriter}
+
+	if options.LogServer != "" {
+		log.Print("Connecting to syslog")
+		s, err := syslog.Dial("tcp", options.LogServer, syslog.LOG_INFO, "Runner", nil)
+		if err != nil {
+			log.Print("Failed to connect to syslog server")
+		}
+		defer s.Close()
+
+		writers = append(writers, s)
+		journalWriters = append(journalWriters, journal.NewSyslogWriter(s))
+	}
+
+	logWriter := io.MultiWriter(writers...)
+
+	journal := journal.NewJournal(journalWriters)
 	buildConfig := build.NewBuildConfig(buildId, logWriter, journal, cfg, *r)
 	buildConfig.ExplicitTasks = explicitTasks
 
@@ -73,12 +95,6 @@ var executeBuild = func(buildConfig *build.BuildConfig) error {
 
 func buildId() string {
 	return time.Now().Format(time.RFC3339)
-}
-
-func createJournal(projectName string, buildId string) (journal.Journal, error) {
-	journalWriter := journal.NewFileJournalWriter(journalPath(projectName, buildId))
-	journal := journal.NewJournal(journalWriter)
-	return journal, nil
 }
 
 func createOutputPathWriter(projectName string, buildId string) (*os.File, error) {

@@ -1,6 +1,9 @@
 package journal
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
 	"reflect"
 	"time"
 )
@@ -16,16 +19,16 @@ type envelope struct {
 }
 
 type journal struct {
-	writer JournalWriter
-	stream []interface{}
+	writers []JournalWriter
+	stream  []interface{}
 }
 
 type JournalWriter interface {
 	Write(envelope *envelope) error
 }
 
-func NewJournal(writer JournalWriter) Journal {
-	j := &journal{writer: writer}
+func NewJournal(writers []JournalWriter) Journal {
+	j := &journal{writers: writers}
 	return j
 }
 
@@ -35,5 +38,12 @@ func (journal journal) Record(record interface{}) error {
 		Time:      time.Now(),
 		EventType: reflect.TypeOf(record).Name(),
 	}
-	return journal.writer.Write(envelope)
+
+	a, _ := json.Marshal(envelope)
+	os.Stdout.WriteString(fmt.Sprintln(fmt.Sprintf("%s %s: - %+v", envelope.Time, envelope.EventType, string(a))))
+	for _, writer := range journal.writers {
+		writer.Write(envelope)
+	}
+
+	return nil
 }

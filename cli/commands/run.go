@@ -15,9 +15,16 @@ func Run() cli.Command {
 				Name:  "task",
 				Usage: "a specific task to run. Note that if the task is set to `skip` it will be run.",
 			},
+			cli.StringFlag{
+				Name:  "syslog",
+				Usage: "a Syslog host to send logs to.",
+			},
 		},
 		Action: func(c *cli.Context) {
-			runner.Run(c.StringSlice("task"))
+			runOptions := &runner.RunOptions{
+				LogServer: c.String("syslog"),
+			}
+			runner.Run(runOptions, c.StringSlice("task"))
 		},
 	}
 }

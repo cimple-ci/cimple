@@ -29,7 +29,6 @@ type StepContext struct {
 func newStepContext(stepId string, taskEnvs map[string]string, stepConfig project.Step) *StepContext {
 	stepContext := new(StepContext)
 	stepContext.Id = stepId
-	stepContext.logger = logging.CreateLogger("Step", os.Stderr)
 
 	command, ok := stepConfig.(project.Command)
 	if ok {

@@ -9,15 +9,18 @@ import (
 	"github.com/lukesmith/cimple/database"
 	"github.com/lukesmith/cimple/frontend"
 	"github.com/lukesmith/cimple/logging"
+	"github.com/mcuadros/go-syslog"
 )
 
 type Config struct {
-	Addr string
+	Addr       string
+	SyslogAddr string
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Addr: ":0",
+		Addr:       ":0",
+		SyslogAddr: ":1514",
 	}
 }
 
@@ -46,6 +49,8 @@ func (server *Server) Start() error {
 	http.Handle("/agents", agents)
 	http.Handle("/hooks", hooks)
 
+	go syslogEndpoint(server)
+
 	go agents.run()
 
 	s := &http.Server{
@@ -70,4 +75,26 @@ func (server *Server) Start() error {
 	}
 
 	return nil
+}
+
+func syslogEndpoint(server *Server) {
+	log.Print("Setting up syslog endpoint")
+	channel := make(syslog.LogPartsChannel)
+	handler := syslog.NewChannelHandler(channel)
+
+	syslogServer := syslog.NewServer()
+	syslogServer.SetFormat(&RFC5424Formatter{})
+	syslogServer.SetHandler(handler)
+	syslogServer.ListenTCP(server.config.SyslogAddr)
+	syslogServer.Boot()
+
+	go func(channel syslog.LogPartsChannel) {
+		for logParts := range channel {
+			if logParts["message"] != "" {
+				log.Println(logParts["message"])
+			}
+		}
+	}(channel)
+
+	syslogServer.Wait()
 }

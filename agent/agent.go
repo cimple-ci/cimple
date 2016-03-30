@@ -10,9 +10,11 @@ import (
 	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/messages"
 	"github.com/lukesmith/cimple/vcs/git"
+	"github.com/lukesmith/syslog"
 	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"reflect"
 )
 
@@ -90,6 +92,26 @@ func (agent *Agent) Start() error {
 	}
 	agent.conn = newWebsocketServerConnection(c, agent.logger)
 
+	s, err := syslog.Dial("tcp", "0.0.0.0:1514", syslog.LOG_INFO, "Agent", nil)
+	if err != nil {
+		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
+	}
+	defer s.Close()
+
+	sOut, err := syslog.Dial("tcp", "0.0.0.0:1514", syslog.LOG_INFO, "Runner", nil)
+	if err != nil {
+		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
+	}
+	defer sOut.Close()
+
+	sErr, err := syslog.Dial("tcp", "0.0.0.0:1514", syslog.LOG_DEBUG, "Runner", nil)
+	if err != nil {
+		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
+	}
+	defer sErr.Close()
+
+	agent.logger = logging.CreateLogger("Agent", s)
+
 	agent.router.On(messages.BuildGitRepository{}, func(m interface{}) {
 		msg := m.(messages.BuildGitRepository)
 		agent.logger.Printf("Building git repo:%s", msg.Url)
@@ -115,6 +137,15 @@ func (agent *Agent) Start() error {
 		err = git.Checkout(checkoutOptions, os.Stdout)
 		if err != nil {
 			agent.logger.Printf("Err during checkout %+v", err)
+		}
+
+		outWriter := io.MultiWriter(os.Stdout)
+		errWriter := io.MultiWriter(os.Stderr)
+
+		// TODO: forward stdout as journal messages, stderr as syslog to server
+		err = executeCimpleRun(pat, outWriter, errWriter)
+		if err != nil {
+			agent.logger.Printf("Err performing Cimple run %+v", err)
 		}
 	})
 	agent.router.On(messages.ConfirmationMessage{}, func(m interface{}) {
@@ -149,4 +180,19 @@ func (agent Agent) Register() error {
 	return agent.send(&messages.RegisterAgentMessage{
 		Hostname: hostname,
 	})
+}
+
+func executeCimpleRun(workingDir string, stdout io.Writer, stderr io.Writer) error {
+	args := []string{"run", "--syslog", "0.0.0.0:1514"}
+	var cmd = exec.Command("cimple", args...)
+	cmd.Dir = workingDir
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
