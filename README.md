@@ -103,6 +103,20 @@ cimple server
 cimple agent
 ```
 
+#### Running in Docker
+
+To run the server:
+
+```
+docker run -p 8080:8080 -p 1514:1514 cimple-server
+```
+
+To run the agent:
+
+```
+docker run cimple-agent --server-addr 192.168.99.100
+```
+
 #### Triggering builds
 
 When running in Server/Agent mode the Server will schedule tasks across the available agent pool.

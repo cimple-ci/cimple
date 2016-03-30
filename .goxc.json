@@ -10,5 +10,8 @@
 			"GOARM": "7"
 		}
 	},
+  "Resources": {
+    "Include": "frontend/templates,frontend/assets"
+  },
 	"ConfigVersion": "0.9"
 }

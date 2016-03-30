@@ -17,8 +17,8 @@ func (fe *frontEnd) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func NewFrontend(db database.CimpleDatabase) http.Handler {
 	app := web_application.NewApplication(&web_application.ApplicationOptions{
-		ViewsDirectory:  "frontend/templates",
-		AssetsDirectory: "frontend/assets",
+		ViewsDirectory:  "./frontend/templates",
+		AssetsDirectory: "./frontend/assets",
 	})
 
 	app.Asset("/css/prism.css")

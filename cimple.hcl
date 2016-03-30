@@ -7,7 +7,6 @@ description = "Cimple CI build tasks"
 
 env {
   GOPATH = "{{index .HostEnvVar \"GOPATH\"}}"
-  GO15VENDOREXPERIMENT = "1"
   # PATH required for glide command (needs access to Git).
   # Should PATH always be mapped by default?
   PATH = "{{index .HostEnvVar \"PATH\"}}"
@@ -49,5 +48,13 @@ DESC
 
   command goxc {
     command = "goxc"
+  }
+
+  script build-cimple-docker {
+    body = <<SCRIPT
+docker build -t cimple-base -f Dockerfile .
+docker build -t cimple-server -f server.Dockerfile .
+docker build -t cimple-agent -f agent.Dockerfile .
+SCRIPT
   }
 }
