@@ -1,14 +1,10 @@
 hash: 16f7e15ab6468122cd43d9d171fdacf6eda98e68d7df08c3fbacca28d457ea34
-updated: 2016-03-30T18:25:20.19002009+01:00
+updated: 2016-03-30T19:55:35.148422753+01:00
 imports:
 - name: github.com/codegangsta/cli
   version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
 - name: github.com/crewjam/rfc5424
   version: 2edeb8956a7878fd604eee37b77385477c984687
-- name: github.com/davecgh/go-spew
-  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
-- name: github.com/goji/param
-  version: da86c81e3e3c23b1948bc7a003d381250a032aa7
 - name: github.com/gorilla/context
   version: 1c83b3eabd45b6d76072b66b746c20815fb2872d
 - name: github.com/gorilla/mux
@@ -17,28 +13,36 @@ imports:
   version: 3986be78bf859e01f01af631ad76da5b269d270c
 - name: github.com/hashicorp/hcl
   version: 5af5025c48e8bf0e03551b8757d92a774b9f0694
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/token
+  - json/parser
+  - hcl/scanner
+  - hcl/strconv
+  - json/scanner
+  - json/token
 - name: github.com/jchannon/negotiator
   version: ce4c1ce489b5afb6d597cb8b2a2c57adf4a01b48
 - name: github.com/jeromer/syslogparser
   version: ff71fe7a7d5279df4b964b31f7ee4adf117277f6
+  subpackages:
+  - rfc3164
+  - rfc5424
 - name: github.com/lukesmith/syslog
   version: 831d1160c842922c89660c9532c0e78a12a4281c
 - name: github.com/mcuadros/go-syslog
   version: e079f554382028527e4509d7bb58793b5e98194e
 - name: github.com/mitchellh/mapstructure
   version: 281073eb9eb092240d33ef253c404f1cca550309
-- name: github.com/pmezard/go-difflib
-  version: e8554b8641db39598be7f6342874b958f12ae1d4
 - name: github.com/satori/go.uuid
   version: d41af8bb6a7704f00bc3b7cba9355ae6a5a80048
-- name: github.com/stretchr/objx
-  version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
 - name: github.com/stretchr/testify
   version: e3a8ff8ce36581f87a15341206f205b1da467059
 - name: github.com/unrolled/render
   version: 40a2dfa24398d37b4a14938442a0f4fe4307b929
-- name: github.com/zenazn/goji
-  version: bf843a174a08e846246b8945f8a9a853d84a256a
 - name: gopkg.in/mcuadros/go-syslog.v2
   version: 6cba2bfcf64a025c899aa3be061161d2b89d8b54
+  subpackages:
+  - format
 devImports: []
