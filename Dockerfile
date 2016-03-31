@@ -1,5 +1,8 @@
 FROM alpine
 
+RUN apk update
+RUN apk add git
+
 COPY ./output/downloads/snapshot/cimple_linux_amd64.tar.gz /opt/cimple_linux_amd64.tar.gz
 COPY ./frontend/templates /opt/frontend/templates
 COPY ./frontend/assets /opt/frontend/assets
