@@ -78,7 +78,7 @@ func (server *Server) Start() error {
 }
 
 func syslogEndpoint(server *Server) {
-	log.Print("Setting up syslog endpoint")
+	server.logger.Print("Setting up syslog endpoint")
 	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 
@@ -91,7 +91,7 @@ func syslogEndpoint(server *Server) {
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
 			if logParts["message"] != "" {
-				log.Println(logParts["message"])
+				server.logger.Println(logParts["message"])
 			}
 		}
 	}(channel)

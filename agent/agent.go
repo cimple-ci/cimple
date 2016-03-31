@@ -7,10 +7,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/messages"
 	"github.com/lukesmith/cimple/vcs/git"
-	"github.com/lukesmith/syslog"
 	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"os"
@@ -32,6 +30,7 @@ const (
 type Config struct {
 	ServerAddr string
 	ServerPort string
+	SyslogUrl  string
 }
 
 func DefaultConfig() (*Config, error) {
@@ -72,11 +71,11 @@ func (a *Agent) read() (messages.Envelope, error) {
 	}
 }
 
-func NewAgent(config *Config, logger io.Writer) (*Agent, error) {
+func NewAgent(config *Config, logger *log.Logger) (*Agent, error) {
 	a := &Agent{
 		Id:     uuid.NewV4(),
 		config: config,
-		logger: logging.CreateLogger("Agent", logger),
+		logger: logger,
 		router: messages.NewRouter(),
 	}
 
@@ -92,28 +91,6 @@ func (agent *Agent) Start() error {
 		return err
 	}
 	agent.conn = newWebsocketServerConnection(c, agent.logger)
-
-	syslogUrl := fmt.Sprintf("%s:1514", agent.config.ServerAddr)
-
-	s, err := syslog.Dial("tcp", syslogUrl, syslog.LOG_INFO, "Agent", nil)
-	if err != nil {
-		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
-	}
-	defer s.Close()
-
-	sOut, err := syslog.Dial("tcp", syslogUrl, syslog.LOG_INFO, "Runner", nil)
-	if err != nil {
-		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
-	}
-	defer sOut.Close()
-
-	sErr, err := syslog.Dial("tcp", syslogUrl, syslog.LOG_DEBUG, "Runner", nil)
-	if err != nil {
-		agent.logger.Printf("Failed to dial syslog on server = %+v", err)
-	}
-	defer sErr.Close()
-
-	agent.logger = logging.CreateLogger("Agent", s)
 
 	agent.router.On(messages.BuildGitRepository{}, func(m interface{}) {
 		msg := m.(messages.BuildGitRepository)
@@ -146,7 +123,7 @@ func (agent *Agent) Start() error {
 		errWriter := io.MultiWriter(os.Stderr)
 
 		// TODO: forward stdout as journal messages, stderr as syslog to server
-		err = executeCimpleRun(pat, outWriter, errWriter, syslogUrl)
+		err = executeCimpleRun(pat, outWriter, errWriter, agent.config.SyslogUrl)
 		if err != nil {
 			agent.logger.Printf("Err performing Cimple run %+v", err)
 		}

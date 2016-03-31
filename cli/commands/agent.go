@@ -3,8 +3,12 @@ package cli
 import (
 	"log"
 
+	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/lukesmith/cimple/agent"
+	"github.com/lukesmith/cimple/logging"
+	"github.com/lukesmith/syslog"
+	"io"
 	"os"
 )
 
@@ -26,12 +30,25 @@ func Agent() cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) {
-			log.Printf("agent")
-
 			agentConfig, err := agent.DefaultConfig()
 			agentConfig.ServerAddr = c.String("server-addr")
 			agentConfig.ServerPort = c.String("server-port")
-			agent, err := agent.NewAgent(agentConfig, os.Stdout)
+			agentConfig.SyslogUrl = fmt.Sprintf("%s:1514", agentConfig.ServerAddr)
+
+			syslogWriter, err := buildSyslogLogger(agentConfig)
+			writers := []io.Writer{os.Stdout}
+
+			if err != nil {
+				log.Fatalf("Unable to connect to server syslog %s = %+v", agentConfig.SyslogUrl, err)
+			} else {
+				writers = append(writers, syslogWriter)
+			}
+			defer syslogWriter.Close()
+
+			logWriter := io.MultiWriter(writers...)
+			logger := logging.CreateLogger("Agent", logWriter)
+
+			agent, err := agent.NewAgent(agentConfig, logger)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -42,4 +59,10 @@ func Agent() cli.Command {
 			}
 		},
 	}
+}
+
+func buildSyslogLogger(config *agent.Config) (*syslog.Writer, error) {
+	log.Printf("Attempting to connect to Cimple Server syslog endpoint - %s", config.SyslogUrl)
+
+	return syslog.Dial("tcp", config.SyslogUrl, syslog.LOG_INFO, "Agent", nil)
 }
