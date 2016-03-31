@@ -30,6 +30,8 @@ func Agent() cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) {
+			logging.SetDefaultLogger("Agent", os.Stdout)
+
 			agentConfig, err := agent.DefaultConfig()
 			agentConfig.ServerAddr = c.String("server-addr")
 			agentConfig.ServerPort = c.String("server-port")
@@ -46,6 +48,7 @@ func Agent() cli.Command {
 			defer syslogWriter.Close()
 
 			logWriter := io.MultiWriter(writers...)
+			logging.SetDefaultLogger("Agent", logWriter)
 			logger := logging.CreateLogger("Agent", logWriter)
 
 			agent, err := agent.NewAgent(agentConfig, logger)

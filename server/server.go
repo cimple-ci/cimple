@@ -1,14 +1,12 @@
 package server
 
 import (
-	"io"
 	"log"
 	"net"
 	"net/http"
 
 	"github.com/lukesmith/cimple/database"
 	"github.com/lukesmith/cimple/frontend"
-	"github.com/lukesmith/cimple/logging"
 	"github.com/mcuadros/go-syslog"
 )
 
@@ -29,10 +27,10 @@ type Server struct {
 	logger *log.Logger
 }
 
-func NewServer(config *Config, logger io.Writer) (*Server, error) {
+func NewServer(config *Config, logger *log.Logger) (*Server, error) {
 	s := &Server{
 		config: config,
-		logger: logging.CreateLogger("Server", logger),
+		logger: logger,
 	}
 
 	return s, nil

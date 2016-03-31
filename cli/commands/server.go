@@ -7,6 +7,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/lukesmith/cimple/server"
 	"os"
+	"github.com/lukesmith/cimple/logging"
 )
 
 func Server() cli.Command {
@@ -22,9 +23,12 @@ func Server() cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) {
+			logging.SetDefaultLogger("Server", os.Stdout)
+			logger := logging.CreateLogger("Server", os.Stdout)
+
 			serverConfig := server.DefaultConfig()
 			serverConfig.Addr = fmt.Sprintf(":%s", c.String("port"))
-			server, err := server.NewServer(serverConfig, os.Stdout)
+			server, err := server.NewServer(serverConfig, logger)
 			if err != nil {
 				log.Fatal(err)
 			}

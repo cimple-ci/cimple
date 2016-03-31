@@ -2,9 +2,8 @@ package git
 
 import (
 	"io"
-	"log"
 	"os/exec"
-	"github.com/lukesmith/cimple/logging"
+	"log"
 )
 
 type GitCommand interface {
@@ -14,8 +13,7 @@ type GitCommand interface {
 }
 
 func executeGit(command GitCommand, writer io.Writer) error {
-	logger := logging.CreateLogger("Git", writer)
-	logger.Printf("Performing git %s %s", command.GetName(), command.GetArgs())
+	log.Printf("Performing git %s %s", command.GetName(), command.GetArgs())
 
 	args := []string{command.GetName()}
 	args = append(args, command.GetArgs()...)
