@@ -68,7 +68,7 @@ func (app *Application) Handle(path string, handler handler) *mux.Route {
 }
 
 func (app *Application) Asset(path string) *mux.Route {
-	return app.Router.HandleFunc("/assets" + path, func(w http.ResponseWriter, r *http.Request) {
+	return app.Router.HandleFunc("/assets"+path, func(w http.ResponseWriter, r *http.Request) {
 		file, err := ioutil.ReadFile(filepath.Join(app.options.AssetsDirectory, path))
 		if err != nil {
 			GlobalErrorHandler(w, err)

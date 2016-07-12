@@ -60,7 +60,7 @@ type SampleWorker struct {
 }
 
 func (worker *SampleWorker) CanPerform(c *Chore) bool {
-	log.Printf("Checking if can perform chore %d on %s", c.ID, worker.ID)
+	log.Printf("Checking if can perform chore %d on %+v", c.ID, worker.ID)
 	return !worker.busy
 }
 

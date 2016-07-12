@@ -95,7 +95,7 @@ var executeBuild = func(buildConfig *build.BuildConfig) error {
 }
 
 func buildId() string {
-	return fmt.Sprintf("+v", time.Now().UnixNano())
+	return fmt.Sprintf("%v", time.Now().UnixNano())
 }
 
 func createOutputPathWriter(projectName string, buildId string) (*os.File, error) {

@@ -63,7 +63,6 @@ func (wp *WorkPool) selectWorker(c *Chore) (Worker, error) {
 	for _, w := range wp.workers {
 		if w.CanPerform(c) {
 			return w, nil
-			break
 		}
 	}
 
