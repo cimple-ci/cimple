@@ -2,8 +2,8 @@ package git
 
 import (
 	"io"
-	"os/exec"
 	"log"
+	"os/exec"
 )
 
 type GitCommand interface {

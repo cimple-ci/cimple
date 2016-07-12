@@ -5,9 +5,9 @@ import (
 
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/server"
 	"os"
-	"github.com/lukesmith/cimple/logging"
 )
 
 func Server() cli.Command {
