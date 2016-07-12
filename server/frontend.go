@@ -1,4 +1,4 @@
-package frontend
+package server
 
 import (
 	"net/http"
@@ -6,6 +6,10 @@ import (
 	"github.com/lukesmith/cimple/database"
 	"github.com/lukesmith/cimple/web_application"
 )
+
+type agentPool interface {
+	GetAgents() ([]*Agent, error)
+}
 
 type frontEnd struct {
 	app *web_application.Application
@@ -15,17 +19,17 @@ func (fe *frontEnd) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fe.app.Router.ServeHTTP(w, r)
 }
 
-func NewFrontend(db database.CimpleDatabase) http.Handler {
+func NewFrontend(db database.CimpleDatabase, agentPool agentPool) http.Handler {
 	app := web_application.NewApplication(&web_application.ApplicationOptions{
-		ViewsDirectory:  "./frontend/templates",
-		AssetsDirectory: "./frontend/assets",
+		ViewsDirectory:  "./server/frontend/templates",
+		AssetsDirectory: "./server/frontend/assets",
 	})
 
 	app.Asset("/css/prism.css")
 	app.Asset("/js/prism.js")
 	app.Asset("/js/application.js")
 
-	registerHome(app, db)
+	registerHome(app, db, agentPool)
 	registerProjects(app, db)
 	registerBuilds(app, db)
 

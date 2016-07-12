@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/lukesmith/cimple/chore"
 	"github.com/satori/go.uuid"
 )
 
@@ -14,10 +15,19 @@ const (
 )
 
 type agentpool struct {
-	join   chan *agent
-	leave  chan *agent
-	agents map[*agent]bool
-	logger *log.Logger
+	join       chan *Agent
+	leave      chan *Agent
+	agents     map[*Agent]bool
+	logger     *log.Logger
+	workerpool *chore.WorkPool
+}
+
+func (a *agentpool) GetAgents() ([]*Agent, error) {
+	r := []*Agent{}
+	for agent := range a.agents {
+		r = append(r, agent)
+	}
+	return r, nil
 }
 
 func (a *agentpool) run() {
@@ -25,21 +35,26 @@ func (a *agentpool) run() {
 		select {
 		case agent := <-a.join:
 			a.agents[agent] = true
-			a.logger.Printf("Agent %s joined", agent.id)
+			a.workerpool.AddWorker(agent)
+			a.logger.Printf("Agent %s joined", agent.Id)
 		case agent := <-a.leave:
 			delete(a.agents, agent)
-			a.logger.Printf("Agent %s left", agent.id)
+			a.workerpool.RemoveWorker(agent)
+			a.logger.Printf("Agent %s left", agent.Id)
 		}
 	}
 }
 
 func newAgentPool(logger *log.Logger) *agentpool {
-	return &agentpool{
-		join:   make(chan *agent),
-		leave:  make(chan *agent),
-		agents: make(map[*agent]bool),
-		logger: logger,
+	pool := &agentpool{
+		join:       make(chan *Agent),
+		leave:      make(chan *Agent),
+		agents:     make(map[*Agent]bool),
+		logger:     logger,
+		workerpool: chore.NewWorkPool(),
 	}
+
+	return pool
 }
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize, WriteBufferSize: socketBufferSize}
@@ -64,5 +79,6 @@ func (s *agentpool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		s.leave <- agent
 	}()
-	agent.listen(s.logger)
+
+	agent.listen()
 }

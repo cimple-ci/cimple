@@ -1,4 +1,4 @@
-package frontend
+package server
 
 import (
 	"net/http"
@@ -59,7 +59,7 @@ func (h *projectsHandler) getDetails(app *web_application.Application, w http.Re
 	for _, build := range builds {
 		url, _ := app.Router.Get("project").URL("key", p.Name)
 		buildUrl, _ := app.Router.Get("build").URL("project_key", p.Name, "key", build.Id)
-		buildModels = append(buildModels, &buildModel{Id: p.Name, ProjectUrl: url.Path, BuildUrl: buildUrl.Path})
+		buildModels = append(buildModels, &buildModel{Id: p.Name, ProjectUrl: url.Path, BuildUrl: buildUrl.Path, Date: build.Date})
 	}
 
 	url, _ := app.Router.Get("project").URL("key", p.Name)

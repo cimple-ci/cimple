@@ -7,6 +7,7 @@ description = "Cimple CI build tasks"
 
 env {
   GOPATH = "{{index .HostEnvVar \"GOPATH\"}}"
+  GOROOT = "{{index .HostEnvVar \"GOROOT\"}}"
   # PATH required for glide command (needs access to Git).
   # Should PATH always be mapped by default?
   PATH = "{{index .HostEnvVar \"PATH\"}}"

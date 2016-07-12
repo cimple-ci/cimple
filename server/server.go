@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/lukesmith/cimple/database"
-	"github.com/lukesmith/cimple/frontend"
 	"github.com/mcuadros/go-syslog"
 )
 
@@ -37,19 +36,23 @@ func NewServer(config *Config, logger *log.Logger) (*Server, error) {
 }
 
 func (server *Server) Start() error {
-	agents := newAgentPool(server.logger)
+	agentPool := newAgentPool(server.logger)
+	bq := &buildQueue{}
+	bq.queue = make(chan interface{})
+	bq.agentpool = agentPool
 
 	db := database.NewDatabase("./.cimple")
-	app := frontend.NewFrontend(db)
-	hooks := NewHooks(agents)
+	app := NewFrontend(db, agentPool)
+	hooks := NewHooks(bq)
 
 	http.Handle("/", app)
-	http.Handle("/agents", agents)
+	http.Handle("/agents", agentPool)
 	http.Handle("/hooks", hooks)
 
 	go syslogEndpoint(server)
 
-	go agents.run()
+	go agentPool.run()
+	go bq.run()
 
 	s := &http.Server{
 		Addr: server.config.Addr,
