@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -50,7 +51,7 @@ func (db *database) GetBuilds(project string) ([]*Build, error) {
 	builds := []*Build{}
 
 	for _, d := range dirs {
-		t, err := time.Parse(time.RFC3339, filepath.Base(d))
+		t, err := msToTime(filepath.Base(d))
 		if err != nil {
 			return []*Build{}, err
 		}
@@ -99,4 +100,13 @@ type Build struct {
 
 func (b *Build) GetOutput() ([]byte, error) {
 	return ioutil.ReadFile(b.outputPath)
+}
+
+func msToTime(ms string) (time.Time, error) {
+	msInt, err := strconv.ParseInt(ms, 10, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Unix(0, msInt), nil
 }

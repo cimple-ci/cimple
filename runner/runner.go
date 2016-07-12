@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -94,7 +95,7 @@ var executeBuild = func(buildConfig *build.BuildConfig) error {
 }
 
 func buildId() string {
-	return time.Now().Format(time.RFC3339)
+	return fmt.Sprintf("+v", time.Now().UnixNano())
 }
 
 func createOutputPathWriter(projectName string, buildId string) (*os.File, error) {
