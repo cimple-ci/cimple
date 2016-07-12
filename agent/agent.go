@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/kardianos/osext"
 	"github.com/lukesmith/cimple/messages"
 	"github.com/lukesmith/cimple/vcs/git"
 	"github.com/satori/go.uuid"
@@ -164,7 +165,8 @@ func (agent Agent) Register() error {
 
 func executeCimpleRun(workingDir string, stdout io.Writer, stderr io.Writer, syslogUrl string) error {
 	args := []string{"run", "--syslog", syslogUrl}
-	var cmd = exec.Command("cimple", args...)
+	filename, _ := osext.Executable()
+	var cmd = exec.Command(filename, args...)
 	cmd.Dir = workingDir
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
