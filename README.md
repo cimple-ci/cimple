@@ -117,6 +117,8 @@ To run the agent:
 docker run cimple-agent --server-addr 192.168.99.100
 ```
 
+During development you can use `scripts/cimple-server.sh` and `scripts/cimple-agent.sh`.
+
 #### Triggering builds
 
 When running in Server/Agent mode the Server will schedule tasks across the available agent pool.
