@@ -3,6 +3,7 @@ package chore
 import (
 	"log"
 	"testing"
+	"time"
 )
 
 func TestWorkPool_AddWorker(t *testing.T) {
@@ -28,14 +29,18 @@ func TestWorkPool_RemoveWorker(t *testing.T) {
 func TestWorkPool_QueueChore_WithoutWorkers(t *testing.T) {
 	pool := NewWorkPool()
 
-	chore := &Chore{}
+	done := make(chan bool)
+	chore := &Chore{Done: done}
 	err := pool.QueueChore(chore)
 	if err != nil {
 		t.Fatalf("Expected no error queuing chore %s", err)
 	}
 
-	if chore.Completed {
+	select {
+	case <-done:
 		t.Fatalf("Expected chore not to have been completed")
+	case <-time.After(5 * time.Second):
+		t.Log("Chore not completed, as expected")
 	}
 }
 
@@ -43,13 +48,17 @@ func TestWorkPool_QueueChore_WithWorker(t *testing.T) {
 	pool := NewWorkPool()
 	pool.AddWorker(&SampleWorker{})
 
-	chore := &Chore{}
+	done := make(chan bool)
+	chore := &Chore{Done: done}
 	err := pool.QueueChore(chore)
 	if err != nil {
 		t.Fatalf("Expected no error queuing chore %s", err)
 	}
 
-	if !chore.Completed {
+	select {
+	case <-done:
+		t.Log("Chore done")
+	case <-time.After(10 * time.Second):
 		t.Fatalf("Expected chore to have been completed")
 	}
 }

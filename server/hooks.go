@@ -60,12 +60,14 @@ func (a *buildQueue) run() {
 	for {
 		select {
 		case i := <-a.queue:
-			chore := &chore.Chore{}
-			a.agentpool.workerpool.QueueChore(chore)
-			log.Printf("Queued %s", i)
-			for k, _ := range a.agentpool.agents {
-				k.send(i)
+			chore := &chore.Chore{
+				Done: make(chan bool),
+				Job:  i,
 			}
+			a.agentpool.workerpool.QueueChore(chore)
+			go func() {
+				<-chore.Done
+			}()
 		}
 	}
 }

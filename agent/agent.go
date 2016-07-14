@@ -128,6 +128,11 @@ func (agent *Agent) Start() error {
 		if err != nil {
 			agent.logger.Printf("Err performing Cimple run %+v", err)
 		}
+
+		err = agent.send(&messages.BuildComplete{})
+		if err != nil {
+			agent.logger.Printf("Err sending build complete %+v", err)
+		}
 	})
 	agent.router.On(messages.ConfirmationMessage{}, func(m interface{}) {
 		msg := m.(messages.ConfirmationMessage)
@@ -159,6 +164,7 @@ func (agent *Agent) Start() error {
 func (agent Agent) Register() error {
 	hostname, _ := os.Hostname()
 	return agent.send(&messages.RegisterAgentMessage{
+		Id:       agent.Id,
 		Hostname: hostname,
 	})
 }

@@ -16,32 +16,36 @@ const (
 )
 
 type Agent struct {
-	Id     uuid.UUID
-	conn   AgentConnection
-	logger *log.Logger
-	busy   bool
+	Id        uuid.UUID
+	conn      AgentConnection
+	logger    *log.Logger
+	busy      bool
+	available chan bool
+	router    *messages.Router
 }
 
 func (worker *Agent) CanPerform(c *chore.Chore) bool {
-	return true
+	return !worker.busy
 }
 
 func (worker *Agent) Perform(c *chore.Chore) error {
 	worker.busy = true
-	defer func() {
-		worker.busy = false
-	}()
-	log.Printf("Performing chore %d", c.ID)
-	time.Sleep(7000 * time.Millisecond)
-	log.Printf("Performed chore %d", c.ID)
+	worker.send(c.Job)
+
+	<-worker.available
+	worker.logger.Printf("Agent now available")
+	worker.busy = false
+
 	return nil
 }
 
 func newAgent(agentId uuid.UUID, conn AgentConnection, logger *log.Logger) *Agent {
 	agent := &Agent{
-		Id:     agentId,
-		conn:   conn,
-		logger: logger,
+		Id:        agentId,
+		conn:      conn,
+		logger:    logger,
+		available: make(chan bool),
+		router:    messages.NewRouter(),
 	}
 	return agent
 }
@@ -57,7 +61,7 @@ func (c *Agent) send(msg interface{}) error {
 	}
 
 	name := reflect.TypeOf(msg).Elem().Name()
-	c.logger.Printf("Agent:%s - Sending %s:%s", c, name, env.Id)
+	c.logger.Printf("ServerAgent:%s - Sending %s:%s", c, name, env.Id)
 
 	return c.conn.SendMessage(env)
 }
@@ -74,13 +78,23 @@ func (a *Agent) read() (messages.Envelope, error) {
 func (agent *Agent) listen() {
 	defer agent.conn.Close()
 
+	agent.router.On(messages.RegisterAgentMessage{}, func(m interface{}) {
+		msg := m.(messages.RegisterAgentMessage)
+		agent.send(&messages.ConfirmationMessage{
+			ConfirmedId: msg.Id,
+			Text:        "Thankyou from server"})
+	})
+
+	agent.router.On(messages.BuildComplete{}, func(m interface{}) {
+		agent.logger.Printf("BUILD COMPLETE!!!!!")
+		agent.available <- true
+	})
+
 	for {
 		if msg, err := agent.read(); err == nil {
 			name := reflect.TypeOf(msg.Body).Name()
-			agent.logger.Printf("Agent:%s - Received %s:%s", agent, name, msg.Id)
-			agent.send(&messages.ConfirmationMessage{
-				ConfirmedId: msg.Id,
-				Text:        "Thankyou from server"})
+			agent.logger.Printf("ServerAgent:%s - Received %s:%s", agent, name, msg.Id)
+			agent.router.Route(msg.Body)
 		} else {
 			log.Printf("uhoh - %s", err)
 			break

@@ -9,6 +9,7 @@ func init() {
 	gob.Register(ConfirmationMessage{})
 	gob.Register(RegisterAgentMessage{})
 	gob.Register(BuildGitRepository{})
+	gob.Register(BuildComplete{})
 }
 
 type Envelope struct {
@@ -22,10 +23,14 @@ type ConfirmationMessage struct {
 }
 
 type RegisterAgentMessage struct {
+	Id       uuid.UUID
 	Hostname string
 }
 
 type BuildGitRepository struct {
 	Url    string
 	Commit string
+}
+
+type BuildComplete struct {
 }
