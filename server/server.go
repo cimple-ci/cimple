@@ -46,7 +46,6 @@ func (server *Server) Start() error {
 	hooks := NewHooks(bq)
 
 	http.Handle("/", app)
-	http.Handle("/agents", agentPool)
 	http.Handle("/hooks", hooks)
 
 	go syslogEndpoint(server)

@@ -9,7 +9,7 @@ import (
 
 type homeHandler struct {
 	db        database.CimpleDatabase
-	agentPool agentPool
+	agentPool *agentpool
 }
 
 type homeModel struct {
@@ -18,7 +18,7 @@ type homeModel struct {
 	Agents   []*Agent
 }
 
-func registerHome(app *web_application.Application, db database.CimpleDatabase, agentPool agentPool) {
+func registerHome(app *web_application.Application, db database.CimpleDatabase, agentPool *agentpool) {
 	handler := &homeHandler{
 		db:        db,
 		agentPool: agentPool,

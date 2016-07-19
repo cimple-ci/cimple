@@ -8,12 +8,19 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"github.com/jchannon/negotiator"
 	"github.com/unrolled/render"
 	"log"
 )
 
+const (
+	socketBufferSize  = 1024
+	messageBufferSize = 256
+)
+
 type handler func(*Application, http.ResponseWriter, *http.Request) (interface{}, error)
+type socketHandler func(*Application, *websocket.Conn, http.ResponseWriter, *http.Request) (error)
 
 type ApplicationOptions struct {
 	ViewsDirectory  string
@@ -53,6 +60,22 @@ func NewApplication(options *ApplicationOptions) *Application {
 		negotiator: neg,
 		options:    options,
 	}
+}
+
+var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize, WriteBufferSize: socketBufferSize}
+
+func (app *Application) WebSocket(path string, handler socketHandler) *mux.Route {
+	return app.Router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		socket, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Print(err)
+		}
+
+		err = handler(app, socket, w, r)
+		if err != nil {
+			GlobalErrorHandler(w, err)
+		}
+	})
 }
 
 func (app *Application) Handle(path string, handler handler) *mux.Route {

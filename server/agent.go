@@ -86,7 +86,6 @@ func (agent *Agent) listen() {
 	})
 
 	agent.router.On(messages.BuildComplete{}, func(m interface{}) {
-		agent.logger.Printf("BUILD COMPLETE!!!!!")
 		agent.available <- true
 	})
 

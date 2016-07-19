@@ -2,16 +2,8 @@ package server
 
 import (
 	"log"
-	"net/http"
 
-	"github.com/gorilla/websocket"
 	"github.com/lukesmith/cimple/chore"
-	"github.com/satori/go.uuid"
-)
-
-const (
-	socketBufferSize  = 1024
-	messageBufferSize = 256
 )
 
 type agentpool struct {
@@ -55,30 +47,4 @@ func newAgentPool(logger *log.Logger) *agentpool {
 	}
 
 	return pool
-}
-
-var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize, WriteBufferSize: socketBufferSize}
-
-func (s *agentpool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	socket, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		s.logger.Print(err)
-	}
-
-	agentId, err := uuid.FromString(r.URL.Query().Get("id"))
-	if err != nil {
-		s.logger.Printf("Id in request (%s) is not a valid uuid.", r.URL.Query().Get("id"))
-		// TODO: Return relevant status code
-		return
-	}
-
-	conn := newWebsocketAgentConnection(socket, s.logger)
-	agent := newAgent(agentId, conn, s.logger)
-
-	s.join <- agent
-	defer func() {
-		s.leave <- agent
-	}()
-
-	agent.listen()
 }

@@ -86,7 +86,7 @@ func NewAgent(config *Config, logger *log.Logger) (*Agent, error) {
 func (agent *Agent) Start() error {
 	agent.logger.Printf("Starting agent %s", agent)
 
-	url := fmt.Sprintf("ws://%s:%s/agents?id=%s", agent.config.ServerAddr, agent.config.ServerPort, agent.Id)
+	url := fmt.Sprintf("ws://%s:%s/agents/connection?id=%s", agent.config.ServerAddr, agent.config.ServerPort, agent.Id)
 	c, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		return err
