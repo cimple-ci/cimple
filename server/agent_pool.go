@@ -6,12 +6,26 @@ import (
 	"github.com/lukesmith/cimple/chore"
 )
 
+type AgentPool interface {
+	GetAgents() ([]*Agent, error)
+	Leave(agent *Agent)
+	Join(agent *Agent)
+}
+
 type agentpool struct {
 	join       chan *Agent
 	leave      chan *Agent
 	agents     map[*Agent]bool
 	logger     *log.Logger
 	workerpool *chore.WorkPool
+}
+
+func (a *agentpool) Join(agent *Agent) {
+	a.join <- agent
+}
+
+func (a *agentpool) Leave(agent *Agent) {
+	a.leave <- agent
 }
 
 func (a *agentpool) GetAgents() ([]*Agent, error) {

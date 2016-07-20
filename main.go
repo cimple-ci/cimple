@@ -16,6 +16,7 @@ func main() {
 		cimpleCli.Server(),
 		cimpleCli.Agent(),
 		cimpleCli.Config(),
+		cimpleCli.Agents(),
 	}
 
 	app.Run(os.Args)

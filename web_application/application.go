@@ -20,7 +20,7 @@ const (
 )
 
 type handler func(*Application, http.ResponseWriter, *http.Request) (interface{}, error)
-type socketHandler func(*Application, *websocket.Conn, http.ResponseWriter, *http.Request) (error)
+type socketHandler func(*Application, *websocket.Conn, http.ResponseWriter, *http.Request) error
 
 type ApplicationOptions struct {
 	ViewsDirectory  string

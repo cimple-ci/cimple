@@ -16,12 +16,13 @@ const (
 )
 
 type Agent struct {
-	Id        uuid.UUID
-	conn      AgentConnection
-	logger    *log.Logger
-	busy      bool
-	available chan bool
-	router    *messages.Router
+	Id            uuid.UUID
+	ConnectedDate time.Time
+	conn          AgentConnection
+	logger        *log.Logger
+	busy          bool
+	available     chan bool
+	router        *messages.Router
 }
 
 func (worker *Agent) CanPerform(c *chore.Chore) bool {
@@ -39,13 +40,18 @@ func (worker *Agent) Perform(c *chore.Chore) error {
 	return nil
 }
 
+func (worker *Agent) IsBusy() bool {
+	return worker.busy
+}
+
 func newAgent(agentId uuid.UUID, conn AgentConnection, logger *log.Logger) *Agent {
 	agent := &Agent{
-		Id:        agentId,
-		conn:      conn,
-		logger:    logger,
-		available: make(chan bool),
-		router:    messages.NewRouter(),
+		Id:            agentId,
+		ConnectedDate: time.Now(),
+		conn:          conn,
+		logger:        logger,
+		available:     make(chan bool),
+		router:        messages.NewRouter(),
 	}
 	return agent
 }
