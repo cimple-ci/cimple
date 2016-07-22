@@ -4,24 +4,29 @@ import (
 	"encoding/json"
 )
 
-func (api *ApiClient) GetAgents() ([]Agent, error) {
+type BuildSubmissionOptions struct {
+	Url    string
+	Commit string
+}
+
+func (api *ApiClient) SubmitBuild(options BuildSubmissionOptions) error {
 	client := api.newHttpClient()
-	req, err := api.newGetRequest("agents")
+	req, err := api.newPostRequest("builds", options)
 	if err != nil {
 		return nil, err
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer resp.Body.Close()
 
 	var record []Agent
 	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
-		return nil, err
+		return err
 	}
 
-	return record, nil
+	return nil
 }
