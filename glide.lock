@@ -1,5 +1,5 @@
-hash: 895d211c36d3e248c8105f34b8a73906f4aeb93a7d8767f1ec78bfd776c2c37d
-updated: 2016-07-11T21:29:10.7294072+01:00
+hash: c9255041fd476fd9bc2ee4af39f60649d75d09ede27d98576b99d5fc9358f66d
+updated: 2016-07-22T19:47:43.775235907+01:00
 imports:
 - name: github.com/codegangsta/cli
   version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
@@ -35,10 +35,14 @@ imports:
   version: 7ad26178a06b217fa3a4163bea2e129bbf0c0f2e
 - name: github.com/lukesmith/syslog
   version: 831d1160c842922c89660c9532c0e78a12a4281c
+- name: github.com/mattn/go-runewidth
+  version: d6bea18f789704b5f83375793155289da36a3c7f
 - name: github.com/mcuadros/go-syslog
   version: e079f554382028527e4509d7bb58793b5e98194e
 - name: github.com/mitchellh/mapstructure
   version: 281073eb9eb092240d33ef253c404f1cca550309
+- name: github.com/olekukonko/tablewriter
+  version: daf2955e742cf123959884fdff4685aa79b63135
 - name: github.com/satori/go.uuid
   version: d41af8bb6a7704f00bc3b7cba9355ae6a5a80048
 - name: github.com/stretchr/testify

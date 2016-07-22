@@ -21,6 +21,7 @@ import:
   - package: github.com/lukesmith/syslog
   - package: github.com/laher/goxc
   - package: github.com/kardianos/osext
+  - package: github.com/olekukonko/tablewriter
   # Get and manage a package with Git:
   #- package: github.com/Masterminds/cookoo
   #  # The repository URL
