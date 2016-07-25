@@ -2,17 +2,15 @@ package api
 
 import (
 	"encoding/json"
-	"net/http"
 )
 
 func (api *ApiClient) GetAgents() ([]Agent, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", api.ServerUrl+"/agents", nil)
+	client := api.newHttpClient()
+	req, err := api.newGetRequest("agents")
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

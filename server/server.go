@@ -42,11 +42,9 @@ func (server *Server) Start() error {
 	bq.agentpool = agentPool
 
 	db := database.NewDatabase("./.cimple")
-	app := NewFrontend(db, agentPool, server.logger)
-	hooks := NewHooks(bq)
+	app := NewFrontend(db, agentPool, bq, server.logger)
 
 	http.Handle("/", app)
-	http.Handle("/hooks", hooks)
 
 	go syslogEndpoint(server)
 
