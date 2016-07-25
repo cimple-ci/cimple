@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"fmt"
 )
 
 type BuildSubmissionOptions struct {
@@ -9,11 +9,11 @@ type BuildSubmissionOptions struct {
 	Commit string
 }
 
-func (api *ApiClient) SubmitBuild(options BuildSubmissionOptions) error {
+func (api *ApiClient) SubmitBuild(options *BuildSubmissionOptions) error {
 	client := api.newHttpClient()
 	req, err := api.newPostRequest("builds", options)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp, err := client.Do(req)
@@ -23,9 +23,8 @@ func (api *ApiClient) SubmitBuild(options BuildSubmissionOptions) error {
 
 	defer resp.Body.Close()
 
-	var record []Agent
-	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
-		return err
+	if resp.StatusCode != 202 {
+		return fmt.Errorf("Non accepted response %d", resp.StatusCode)
 	}
 
 	return nil

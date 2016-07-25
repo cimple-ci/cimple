@@ -1,16 +1,21 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/lukesmith/cimple/database"
+	"github.com/lukesmith/cimple/messages"
 	"github.com/lukesmith/cimple/web_application"
+	"log"
 	"time"
 )
 
 type buildsHandler struct {
-	db database.CimpleDatabase
+	db         database.CimpleDatabase
+	buildQueue BuildQueue
+	logger     *log.Logger
 }
 
 type buildModel struct {
@@ -21,12 +26,40 @@ type buildModel struct {
 	BuildOutput string
 }
 
-func registerBuilds(app *web_application.Application, db database.CimpleDatabase) {
+type submitBuildModel struct {
+	Url    string
+	Commit string
+}
+
+func registerBuilds(app *web_application.Application, db database.CimpleDatabase, buildQueue BuildQueue, logger *log.Logger) {
 	handler := &buildsHandler{
-		db: db,
+		db:         db,
+		buildQueue: buildQueue,
+		logger:     logger,
 	}
 
 	app.Handle("/projects/{project_key}/builds/{key}", handler.getDetails).Methods("GET").Name("build")
+	app.Handle("/builds", handler.submitBuild).Methods("POST").Name("submitBuild")
+}
+
+func (h *buildsHandler) submitBuild(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	decoder := json.NewDecoder(r.Body)
+	var submitModel submitBuildModel
+	err := decoder.Decode(&submitModel)
+	if err != nil {
+		w.Write([]byte("Unprocessible entity"))
+		return nil, err
+	} else {
+		w.WriteHeader(http.StatusAccepted)
+		msg := messages.BuildGitRepository{
+			Url:    submitModel.Url,
+			Commit: submitModel.Commit,
+		}
+
+		h.buildQueue.Queue(&msg)
+
+		return nil, nil
+	}
 }
 
 func (h *buildsHandler) getDetails(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
