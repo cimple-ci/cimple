@@ -14,14 +14,6 @@ import (
 	"time"
 )
 
-var (
-	server     *httptest.Server
-	agentsUrl  string
-	reader     io.Reader
-	app        *web_application.Application
-	agentsPool AgentPool
-)
-
 type fakeAgentPool struct {
 	agents []*Agent
 }
@@ -37,21 +29,25 @@ func (a *fakeAgentPool) Join(agent *Agent) {
 func (a *fakeAgentPool) Leave(agent *Agent) {
 }
 
-func init() {
+func newWebApplication() (*web_application.Application, *httptest.Server) {
 	options := &web_application.ApplicationOptions{}
-	app = web_application.NewApplication(options)
-	agentsPool = &fakeAgentPool{}
-	registerAgents(app, agentsPool, log.New(os.Stdout, "", 0))
-	server = httptest.NewServer(app)
-	agentsUrl = fmt.Sprintf("%s/agents", server.URL)
+	app := web_application.NewApplication(options)
+	server := httptest.NewServer(app)
+	return app, server
 }
 
 func Test_GetAgents_Json(t *testing.T) {
+	app, server := newWebApplication()
+	agentsPool := &fakeAgentPool{}
+	registerAgents(app, agentsPool, log.New(os.Stdout, "", 0))
+	agentsUrl := fmt.Sprintf("%s/agents", server.URL)
+
 	agent := newAgent(uuid.NewV4(), nil, nil)
 	agent.ConnectedDate = time.Date(2016, time.July, 20, 20, 12, 55, 826456124, time.Local)
 	agent.busy = true
 	agentsPool.Join(agent)
 
+	var reader io.Reader
 	request, err := http.NewRequest("GET", agentsUrl, reader)
 	request.Header.Add("Accept", "application/json")
 

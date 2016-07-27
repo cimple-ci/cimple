@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/lukesmith/cimple/database"
-	"github.com/lukesmith/cimple/messages"
 	"github.com/lukesmith/cimple/web_application"
+	"github.com/satori/go.uuid"
 	"log"
 	"time"
 )
@@ -26,9 +26,16 @@ type buildModel struct {
 	BuildOutput string
 }
 
+type buildsItemModel struct {
+	Id             uuid.UUID `json:"id"`
+	SubmissionDate time.Time `json:"submission_date"`
+	ProjectUrl     string    `json:"project_url"`
+	BuildUrl       string    `json:"build_url"`
+}
+
 type submitBuildModel struct {
-	Url    string
-	Commit string
+	Url    string `json:"url"`
+	Commit string `json:"commit"`
 }
 
 func registerBuilds(app *web_application.Application, db database.CimpleDatabase, buildQueue BuildQueue, logger *log.Logger) {
@@ -39,7 +46,31 @@ func registerBuilds(app *web_application.Application, db database.CimpleDatabase
 	}
 
 	app.Handle("/projects/{project_key}/builds/{key}", handler.getDetails).Methods("GET").Name("build")
+	app.Handle("/builds", handler.listBuilds).Methods("GET").Name("listBuilds")
 	app.Handle("/builds", handler.submitBuild).Methods("POST").Name("submitBuild")
+}
+
+func (h *buildsHandler) listBuilds(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	pendingBuilds, err := h.buildQueue.GetQueued()
+	if err != nil {
+		return nil, err
+	}
+
+	builds := make([]*buildsItemModel, 0)
+
+	for _, build := range pendingBuilds {
+		//projectUrl, _ := app.Router.Get("project").URL("key", "project")
+		//buildUrl, _ := app.Router.Get("build").URL("project_key", "project", "key", build.Id)
+
+		buildModel := &buildsItemModel{
+			Id:             build.Id(),
+			SubmissionDate: build.SubmissionDate(),
+		}
+
+		builds = append(builds, buildModel)
+	}
+
+	return builds, nil
 }
 
 func (h *buildsHandler) submitBuild(app *web_application.Application, w http.ResponseWriter, r *http.Request) (interface{}, error) {
@@ -51,12 +82,9 @@ func (h *buildsHandler) submitBuild(app *web_application.Application, w http.Res
 		return nil, err
 	} else {
 		w.WriteHeader(http.StatusAccepted)
-		msg := messages.BuildGitRepository{
-			Url:    submitModel.Url,
-			Commit: submitModel.Commit,
-		}
+		job := NewBuildGitRepositoryJob(submitModel.Url, submitModel.Commit)
 
-		h.buildQueue.Queue(&msg)
+		h.buildQueue.Queue(job)
 
 		return nil, nil
 	}

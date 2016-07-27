@@ -65,6 +65,10 @@ func (wp *WorkPool) QueueChore(c *Chore) error {
 	return nil
 }
 
+func (wp *WorkPool) QueuedChores() ([]*Chore, error) {
+	return wp.queuedChores, nil
+}
+
 func (wp *WorkPool) selectWorker(c *Chore) (Worker, error) {
 	for _, w := range wp.workers {
 		if w.CanPerform(c) {
