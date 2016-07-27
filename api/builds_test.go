@@ -58,7 +58,7 @@ func Test_ListBuilds(t *testing.T) {
 
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, `[{"id": "2bf80263-fa25-4df4-b132-aaa3bf62381d", "submission_date": "2016-08-20T11:12:13.826456124+01:00"}]`)
+		fmt.Fprintln(w, `[{"id": "2bf80263-fa25-4df4-b132-aaa3bf62381d", "submission_date": "2016-08-20T11:12:13.826456124+01:00", "build_url": "http://build.test/builds/1"}]`)
 	}))
 	defer ts.Close()
 
@@ -82,5 +82,9 @@ func Test_ListBuilds(t *testing.T) {
 	expSubmission := time.Date(2016, time.August, 20, 11, 12, 13, 826456124, time.Local)
 	if builds[0].SubmissionDate != expSubmission {
 		t.Fatalf("Expected a different SubmissionDate - was %s expected %s", builds[0].SubmissionDate, expSubmission)
+	}
+
+	if builds[0].BuildUrl != "http://build.test/builds/1" {
+		t.Fatalf("Expected a different BuilrUrl - was %s", builds[0].BuildUrl)
 	}
 }

@@ -21,13 +21,18 @@ func Server() cli.Command {
 				Usage: "The server port.",
 				Value: "8080",
 			},
+			cli.StringFlag{
+				Name:  "Host",
+				Usage: "The host to bind to",
+				Value: "127.0.0.1",
+			},
 		},
 		Action: func(c *cli.Context) {
 			logging.SetDefaultLogger("Server", os.Stdout)
 			logger := logging.CreateLogger("Server", os.Stdout)
 
 			serverConfig := server.DefaultConfig()
-			serverConfig.Addr = fmt.Sprintf(":%s", c.String("port"))
+			serverConfig.Addr = fmt.Sprintf("%s:%s", c.String("Host"), c.String("port"))
 			server, err := server.NewServer(serverConfig, logger)
 			if err != nil {
 				log.Fatal(err)

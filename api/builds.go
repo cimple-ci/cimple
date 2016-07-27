@@ -15,6 +15,7 @@ type BuildSubmissionOptions struct {
 type Build struct {
 	Id             uuid.UUID `json:"id"`
 	SubmissionDate time.Time `json:"submission_date"`
+	BuildUrl       string    `json:"build_url"`
 }
 
 func (api *ApiClient) SubmitBuild(options *BuildSubmissionOptions) error {

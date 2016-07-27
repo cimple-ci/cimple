@@ -30,7 +30,9 @@ func (a *fakeAgentPool) Leave(agent *Agent) {
 }
 
 func newWebApplication() (*web_application.Application, *httptest.Server) {
-	options := &web_application.ApplicationOptions{}
+	options := &web_application.ApplicationOptions{
+		Host: "cimple.test",
+	}
 	app := web_application.NewApplication(options)
 	server := httptest.NewServer(app)
 	return app, server

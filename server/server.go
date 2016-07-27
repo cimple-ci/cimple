@@ -42,7 +42,7 @@ func (server *Server) Start() error {
 	bq.agentpool = agentPool
 
 	db := database.NewDatabase("./.cimple")
-	app := NewFrontend(db, agentPool, bq, server.logger)
+	app := NewFrontend(db, agentPool, bq, server.config.Addr, server.logger)
 
 	http.Handle("/", app)
 

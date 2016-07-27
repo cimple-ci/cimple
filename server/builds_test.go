@@ -101,5 +101,9 @@ func Test_ListBuilds(t *testing.T) {
 		if submissionDate != queuedItem.SubmissionDate() {
 			t.Errorf("Expected submission_date to be %s - was %s", queuedItem.SubmissionDate(), m[0]["submission_date"])
 		}
+
+		if m[0]["build_url"] != "http://cimple.test/builds/"+queuedItem.Id().String() {
+			t.Errorf("Expected build_url not to be %s - %s", m[0]["build_url"], server.URL)
+		}
 	}
 }

@@ -20,10 +20,11 @@ func (fe *frontEnd) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fe.app.Router.ServeHTTP(w, r)
 }
 
-func NewFrontend(db database.CimpleDatabase, agentPool *agentpool, buildQueue *buildQueue, logger *log.Logger) http.Handler {
+func NewFrontend(db database.CimpleDatabase, agentPool *agentpool, buildQueue *buildQueue, addr string, logger *log.Logger) http.Handler {
 	app := web_application.NewApplication(&web_application.ApplicationOptions{
 		ViewsDirectory:  "./server/frontend/templates",
 		AssetsDirectory: "./server/frontend/assets",
+		Host:            addr,
 	})
 
 	app.Asset("/css/prism.css")

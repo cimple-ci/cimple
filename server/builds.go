@@ -29,7 +29,6 @@ type buildModel struct {
 type buildsItemModel struct {
 	Id             uuid.UUID `json:"id"`
 	SubmissionDate time.Time `json:"submission_date"`
-	ProjectUrl     string    `json:"project_url"`
 	BuildUrl       string    `json:"build_url"`
 }
 
@@ -45,7 +44,7 @@ func registerBuilds(app *web_application.Application, db database.CimpleDatabase
 		logger:     logger,
 	}
 
-	app.Handle("/projects/{project_key}/builds/{key}", handler.getDetails).Methods("GET").Name("build")
+	app.Handle("/builds/{key}", handler.getDetails).Methods("GET").Name("build")
 	app.Handle("/builds", handler.listBuilds).Methods("GET").Name("listBuilds")
 	app.Handle("/builds", handler.submitBuild).Methods("POST").Name("submitBuild")
 }
@@ -60,11 +59,12 @@ func (h *buildsHandler) listBuilds(app *web_application.Application, w http.Resp
 
 	for _, build := range pendingBuilds {
 		//projectUrl, _ := app.Router.Get("project").URL("key", "project")
-		//buildUrl, _ := app.Router.Get("build").URL("project_key", "project", "key", build.Id)
+		buildUrl, _ := app.Router.Get("build").URL("key", build.Id().String())
 
 		buildModel := &buildsItemModel{
 			Id:             build.Id(),
 			SubmissionDate: build.SubmissionDate(),
+			BuildUrl:       buildUrl.String(),
 		}
 
 		builds = append(builds, buildModel)

@@ -25,6 +25,7 @@ type socketHandler func(*Application, *websocket.Conn, http.ResponseWriter, *htt
 type ApplicationOptions struct {
 	ViewsDirectory  string
 	AssetsDirectory string
+	Host            string
 }
 
 type Application struct {
@@ -49,7 +50,7 @@ func NewNotFoundError() error {
 }
 
 func NewApplication(options *ApplicationOptions) *Application {
-	router := mux.NewRouter()
+	router := mux.NewRouter().Host(options.Host).Subrouter()
 	helpers := NewAppHelper(router)
 	render := NewRenderer(options, helpers)
 	neg := negotiator.New(NewHtmlResponseProcessor(render))
