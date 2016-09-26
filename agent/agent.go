@@ -93,6 +93,10 @@ func (agent *Agent) Start() error {
 	}
 	agent.conn = newWebsocketServerConnection(c, agent.logger)
 
+	agent.router.OnError(func(m interface{}) {
+		agent.logger.Printf("Received an error routing %+v", m)
+	})
+
 	agent.router.On(messages.BuildGitRepository{}, func(m interface{}) {
 		msg := m.(messages.BuildGitRepository)
 		agent.logger.Printf("Building git repo:%s", msg.Url)

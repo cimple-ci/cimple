@@ -23,6 +23,7 @@ type Agent struct {
 	busy          bool
 	available     chan bool
 	router        *messages.Router
+	sender        *messages.Router
 }
 
 func (worker *Agent) CanPerform(c *chore.Chore) bool {
@@ -31,7 +32,8 @@ func (worker *Agent) CanPerform(c *chore.Chore) bool {
 
 func (worker *Agent) Perform(c *chore.Chore) error {
 	worker.busy = true
-	worker.send(c.Job)
+
+	worker.sender.Route(c.Job)
 
 	<-worker.available
 	worker.logger.Printf("Agent now available")
@@ -52,7 +54,21 @@ func newAgent(agentId uuid.UUID, conn AgentConnection, logger *log.Logger) *Agen
 		logger:        logger,
 		available:     make(chan bool),
 		router:        messages.NewRouter(),
+		sender:        messages.NewRouter(),
 	}
+
+	agent.sender.OnError(func(m interface{}) {
+		agent.logger.Printf("Unable to route %+v", m)
+	})
+
+	agent.sender.On(buildGitRepositoryJob{}, func(m interface{}) {
+		msg := m.(*buildGitRepositoryJob)
+		agent.send(&messages.BuildGitRepository{
+			Url:    msg.Url,
+			Commit: msg.Commit,
+		})
+	})
+
 	return agent
 }
 
