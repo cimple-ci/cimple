@@ -1,16 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	cimpleCli "github.com/lukesmith/cimple/cli/commands"
 	"github.com/urfave/cli"
 )
 
+var (
+	Revision  string
+	Version   string
+	BuildDate string
+)
+
 func main() {
+	cli.VersionPrinter = func(c *cli.Context) {
+		fmt.Fprintf(c.App.Writer, "version=%s\n\nrevision=%s\ndate=%s\n", c.App.Version, Revision, BuildDate)
+	}
+
 	app := cli.NewApp()
 	app.Name = "Cimple"
 	app.Usage = "Cimple build system"
+	app.Version = Version
 	app.Commands = []cli.Command{
 		cimpleCli.Run(),
 		cimpleCli.Server(),
