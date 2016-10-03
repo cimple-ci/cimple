@@ -10,14 +10,18 @@ import (
 	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/project"
 	"github.com/lukesmith/cimple/vcs"
-	"github.com/lukesmith/syslog"
 	"path"
 	"path/filepath"
 	"time"
 )
 
 type RunOptions struct {
-	LogServer string
+	Journal *JournalSettings
+}
+
+type JournalSettings struct {
+	Driver string
+	Format string
 }
 
 func Run(options *RunOptions, explicitTasks []string) {
@@ -38,21 +42,20 @@ func Run(options *RunOptions, explicitTasks []string) {
 
 	r := loadRepositoryInfo()
 
-	writers := []io.Writer{os.Stderr, fileWriter}
+	writers := []io.Writer{os.Stdout, fileWriter}
 
-	journalFileWriter := journal.NewFileJournalWriter(journalPath(projectName, buildId))
-	journalWriters := []journal.JournalWriter{journalFileWriter}
+	journalWriters := []journal.JournalWriter{}
 
-	if options.LogServer != "" {
-		log.Print("Connecting to syslog")
-		s, err := syslog.Dial("tcp", options.LogServer, syslog.LOG_INFO, "Runner", nil)
-		if err != nil {
-			log.Print("Failed to connect to syslog server")
+	if options.Journal.Driver == "console" {
+		var formatter journal.JournalFormatter
+		if options.Journal.Format == "text" {
+			formatter = journal.NewTextFormatter()
+		} else if options.Journal.Format == "json" {
+			formatter = journal.NewJsonFormatter()
 		}
-		defer s.Close()
 
-		writers = append(writers, s)
-		journalWriters = append(journalWriters, journal.NewSyslogWriter(s))
+		journalWriter := journal.NewJournalWriter(os.Stderr, formatter)
+		journalWriters = append(journalWriters, journalWriter)
 	}
 
 	logWriter := io.MultiWriter(writers...)

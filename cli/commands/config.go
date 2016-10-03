@@ -3,7 +3,7 @@ package cli
 import (
 	"log"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 
 	"github.com/lukesmith/cimple/project"
 )

@@ -5,9 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/codegangsta/cli"
 	"github.com/lukesmith/cimple/api"
 	"github.com/olekukonko/tablewriter"
+	"github.com/urfave/cli"
 )
 
 func Agents() cli.Command {

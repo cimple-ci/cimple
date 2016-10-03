@@ -10,6 +10,7 @@ import (
 	"github.com/kardianos/osext"
 	"github.com/lukesmith/cimple/messages"
 	"github.com/lukesmith/cimple/vcs/git"
+	"github.com/lukesmith/syslog"
 	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"os"
@@ -125,10 +126,15 @@ func (agent *Agent) Start() error {
 		}
 
 		outWriter := io.MultiWriter(os.Stdout)
-		errWriter := io.MultiWriter(os.Stderr)
 
-		// TODO: forward stdout as journal messages, stderr as syslog to server
-		err = executeCimpleRun(pat, outWriter, errWriter, agent.config.SyslogUrl)
+		s, err := syslog.Dial("tcp", agent.config.SyslogUrl, syslog.LOG_INFO, "Runner", nil)
+		if err != nil {
+			agent.logger.Printf("Error connecting to syslog %+v", err)
+		}
+		defer s.Close()
+		errWriter := io.MultiWriter(s)
+
+		err = executeCimpleRun(pat, outWriter, errWriter)
 		if err != nil {
 			agent.logger.Printf("Err performing Cimple run %+v", err)
 		}
@@ -173,8 +179,8 @@ func (agent Agent) Register() error {
 	})
 }
 
-func executeCimpleRun(workingDir string, stdout io.Writer, stderr io.Writer, syslogUrl string) error {
-	args := []string{"run", "--syslog", syslogUrl}
+func executeCimpleRun(workingDir string, stdout io.Writer, stderr io.Writer) error {
+	args := []string{"run", "--journal-driver", "console", "--journal-format", "json"}
 	filename, _ := osext.Executable()
 	var cmd = exec.Command(filename, args...)
 	cmd.Dir = workingDir

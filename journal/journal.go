@@ -1,9 +1,6 @@
 package journal
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
 	"reflect"
 	"time"
 )
@@ -39,8 +36,6 @@ func (journal journal) Record(record interface{}) error {
 		EventType: reflect.TypeOf(record).Name(),
 	}
 
-	a, _ := json.Marshal(envelope)
-	os.Stdout.WriteString(fmt.Sprintln(fmt.Sprintf("%s %s: - %+v", envelope.Time, envelope.EventType, string(a))))
 	for _, writer := range journal.writers {
 		writer.Write(envelope)
 	}

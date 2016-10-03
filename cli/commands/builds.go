@@ -2,9 +2,9 @@ package cli
 
 import (
 	"fmt"
-	"github.com/codegangsta/cli"
 	"github.com/lukesmith/cimple/api"
 	"github.com/olekukonko/tablewriter"
+	"github.com/urfave/cli"
 	"log"
 	"os"
 )

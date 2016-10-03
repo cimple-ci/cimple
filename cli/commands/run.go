@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"github.com/codegangsta/cli"
 	"github.com/lukesmith/cimple/runner"
+	"github.com/urfave/cli"
 )
 
 func Run() cli.Command {
@@ -13,16 +13,25 @@ func Run() cli.Command {
 		Flags: []cli.Flag{
 			cli.StringSliceFlag{
 				Name:  "task",
-				Usage: "a specific task to run. Note that if the task is set to `skip` it will be run.",
+				Usage: "a specific `TASK` to run. Note that if the task is set to `skip` it will be run.",
 			},
 			cli.StringFlag{
-				Name:  "syslog",
-				Usage: "a Syslog host to send logs to.",
+				Name:  "journal-driver",
+				Usage: "specifiy the `driver` to send journal messages to",
+				Value: "console",
+			},
+			cli.StringFlag{
+				Name:  "journal-format",
+				Usage: "specify the output `FORMAT`",
+				Value: "text",
 			},
 		},
 		Action: func(c *cli.Context) {
 			runOptions := &runner.RunOptions{
-				LogServer: c.String("syslog"),
+				Journal: &runner.JournalSettings{
+					Driver: c.String("journal-driver"),
+					Format: c.String("journal-format"),
+				},
 			}
 			runner.Run(runOptions, c.StringSlice("task"))
 		},

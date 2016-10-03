@@ -1,10 +1,10 @@
-hash: c9255041fd476fd9bc2ee4af39f60649d75d09ede27d98576b99d5fc9358f66d
-updated: 2016-07-22T19:47:43.775235907+01:00
+hash: e2b776435117c86fb2a593cf56f2a599839341910004990c7853cde069dc9f49
+updated: 2016-10-03T22:14:21.415103731+01:00
 imports:
-- name: github.com/codegangsta/cli
-  version: b5232bb2934f606f9f27a1305f1eea224e8e8b88
 - name: github.com/crewjam/rfc5424
   version: 2edeb8956a7878fd604eee37b77385477c984687
+- name: github.com/fatih/color
+  version: dea9d3a26a087187530244679c1cfb3a42937794
 - name: github.com/gorilla/context
   version: 1c83b3eabd45b6d76072b66b746c20815fb2872d
 - name: github.com/gorilla/mux
@@ -16,10 +16,10 @@ imports:
   subpackages:
   - hcl/ast
   - hcl/parser
-  - hcl/token
-  - json/parser
   - hcl/scanner
   - hcl/strconv
+  - hcl/token
+  - json/parser
   - json/scanner
   - json/token
 - name: github.com/jchannon/negotiator
@@ -35,6 +35,10 @@ imports:
   version: 7ad26178a06b217fa3a4163bea2e129bbf0c0f2e
 - name: github.com/lukesmith/syslog
   version: 831d1160c842922c89660c9532c0e78a12a4281c
+- name: github.com/mattn/go-colorable
+  version: 6c903ff4aa50920ca86087a280590b36b3152b9c
+- name: github.com/mattn/go-isatty
+  version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
 - name: github.com/mattn/go-runewidth
   version: d6bea18f789704b5f83375793155289da36a3c7f
 - name: github.com/mcuadros/go-syslog
@@ -51,6 +55,12 @@ imports:
   - assert
 - name: github.com/unrolled/render
   version: 198ad4d8b8a4612176b804ca10555b222a086b40
+- name: github.com/urfave/cli
+  version: d53eb991652b1d438abdd34ce4bfa3ef1539108e
+- name: golang.org/x/sys
+  version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
+  subpackages:
+  - unix
 - name: gopkg.in/mcuadros/go-syslog.v2
   version: 6cba2bfcf64a025c899aa3be061161d2b89d8b54
   subpackages:

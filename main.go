@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/codegangsta/cli"
 	cimpleCli "github.com/lukesmith/cimple/cli/commands"
+	"github.com/urfave/cli"
 )
 
 func main() {

@@ -4,10 +4,10 @@ import (
 	"log"
 
 	"fmt"
-	"github.com/codegangsta/cli"
 	"github.com/lukesmith/cimple/agent"
 	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/syslog"
+	"github.com/urfave/cli"
 	"io"
 	"os"
 )

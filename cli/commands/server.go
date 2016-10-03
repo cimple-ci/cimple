@@ -4,9 +4,9 @@ import (
 	"log"
 
 	"fmt"
-	"github.com/codegangsta/cli"
 	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/server"
+	"github.com/urfave/cli"
 	"os"
 )
 

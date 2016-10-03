@@ -30,7 +30,9 @@ func TestRun_ExplicitTasks(t *testing.T) {
 		return nil
 	}
 
-	options := &RunOptions{}
+	options := &RunOptions{
+		Journal: &JournalSettings{},
+	}
 	Run(options, []string{"two"})
 
 	assert.Equal([]string{"two"}, executedConfig.ExplicitTasks)
