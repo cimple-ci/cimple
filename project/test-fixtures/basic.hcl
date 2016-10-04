@@ -4,6 +4,7 @@ cimple {
 
 name = "Cimple"
 description = "Project description"
+version = "1.3.2"
 
 env {
   project_env = "project"

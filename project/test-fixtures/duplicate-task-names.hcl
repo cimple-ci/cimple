@@ -4,6 +4,7 @@ cimple {
 
 name = "Cimple"
 description = "Testing duplicate task names exist"
+version = "0.0.1"
 
 task "echo" {
   description = "Description of the echo task"

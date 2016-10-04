@@ -4,6 +4,7 @@ cimple {
 
 name = "Cimple"
 description = "Project description"
+version = "0.0.1"
 
 task "A" {
   command "single" {

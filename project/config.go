@@ -64,6 +64,7 @@ type Config struct {
 type Project struct {
 	Name        string
 	Description string
+	Version     string
 	Env         map[string]string
 }
 
@@ -113,6 +114,7 @@ func parseConfig(obj *ast.File) (*Config, error) {
 
 	result.Project.Name = m["name"].(string)
 	result.Project.Description = m["description"].(string)
+	result.Project.Version = m["version"].(string)
 	result.Project.Env = make(map[string]string)
 
 	list, ok := obj.Node.(*ast.ObjectList)

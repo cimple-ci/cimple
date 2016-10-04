@@ -22,6 +22,7 @@ func TestParse(t *testing.T) {
 		Project: Project{
 			Name:        "Cimple",
 			Description: "Project description",
+			Version:     "1.3.2",
 			Env: map[string]string{
 				"project_env": "project",
 			},

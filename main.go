@@ -10,7 +10,7 @@ import (
 
 var (
 	Revision  string
-	Version   string
+	VERSION   string
 	BuildDate string
 )
 
@@ -22,7 +22,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Cimple"
 	app.Usage = "Cimple build system"
-	app.Version = Version
+	app.Version = VERSION
 	app.Commands = []cli.Command{
 		cimpleCli.Run(),
 		cimpleCli.Server(),
