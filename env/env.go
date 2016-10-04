@@ -1,7 +1,25 @@
 package env
 
-func Cimple() map[string]string {
-	env := make(map[string]string)
-	env["CIMPLE_VERSION"] = "0.0.1"
-	return env
+import "os"
+import "strings"
+
+type CimpleEnvironment struct {
+	Version string
+}
+
+func Cimple() *CimpleEnvironment {
+	return &CimpleEnvironment{
+		Version: "0.0.1",
+	}
+}
+
+func EnvironmentVariables() map[string]string {
+	vars := make(map[string]string)
+
+	for _, e := range os.Environ() {
+		pair := strings.Split(e, "=")
+		vars[pair[0]] = pair[1]
+	}
+
+	return vars
 }

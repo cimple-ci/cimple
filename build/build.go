@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	exec "os/exec"
-	"strings"
 	"text/template"
 
 	"fmt"
@@ -18,9 +17,33 @@ import (
 	"os"
 )
 
+type StepVars struct {
+	Cimple     *env.CimpleEnvironment
+	Project    project.Project
+	TaskName   string
+	WorkingDir string
+	HostEnv    map[string]string
+	StepEnv    map[string]string
+}
+
+func (sv *StepVars) Map() map[string]string {
+	m := make(map[string]string)
+	m = merge(m, sv.HostEnv)
+
+	m["CIMPLE_VERSION"] = sv.Cimple.Version
+	m["CIMPLE_PROJECT_NAME"] = sv.Project.Name
+	m["CIMPLE_PROJECT_VERSION"] = sv.Project.Version
+	m["CIMPLE_TASK_NAME"] = sv.TaskName
+	m["CIMPLE_WORKING_DIR"] = sv.WorkingDir
+
+	m = merge(m, sv.StepEnv)
+
+	return m
+}
+
 type StepContext struct {
 	Id     string
-	Env    map[string]string
+	Env    *StepVars
 	Cmd    string
 	Args   []string
 	logger *log.Logger
@@ -29,6 +52,7 @@ type StepContext struct {
 func newStepContext(stepId string, taskEnvs map[string]string, stepConfig project.Step) *StepContext {
 	stepContext := new(StepContext)
 	stepContext.Id = stepId
+	stepContext.Env = new(StepVars)
 
 	command, ok := stepConfig.(project.Command)
 	if ok {
@@ -46,39 +70,72 @@ func newStepContext(stepId string, taskEnvs map[string]string, stepConfig projec
 		stepContext.Args = []string{f.Name()}
 	}
 
-	stepEnvs := merge(taskEnvs, stepConfig.GetEnv())
-	stepContext.Env = merge(stepEnvs, env.Cimple())
+	wd, _ := os.Getwd()
+	stepContext.Env.WorkingDir = wd
+	stepContext.Env.Cimple = env.Cimple()
+	stepContext.Env.StepEnv = merge(taskEnvs, stepConfig.GetEnv())
+	stepContext.Env.HostEnv = env.EnvironmentVariables()
+
 	return stepContext
 }
 
+func (step *StepContext) templatedArgs() ([]string, error) {
+	args := []string{}
+	for _, v := range step.Args {
+		tmpl, err := template.New("t").Parse(v)
+		if err != nil {
+			return nil, err
+		}
+		var doc bytes.Buffer
+		tmpl.Execute(&doc, step.Args)
+		args = append(args, doc.String())
+	}
+
+	return args, nil
+}
+
+func (step *StepContext) templatedEnvs() (map[string]string, error) {
+	env := make(map[string]string)
+
+	for k, v := range step.Env.Map() {
+		tmpl, err := template.New("t").Parse(v)
+		if err != nil {
+			return nil, err
+		}
+		var doc bytes.Buffer
+		tmpl.Execute(&doc, step.Env)
+		env[k] = doc.String()
+	}
+
+	return env, nil
+}
+
 func (step *StepContext) execute(journal journal.Journal, stdout io.Writer, stderr io.Writer) error {
-	step.logger.Printf("Executing %s %s", step.Cmd, strings.Join(step.Args, " "))
-	var cmd = exec.Command(step.Cmd, step.Args...)
+	args, err := step.templatedArgs()
+	if err != nil {
+		return err
+	}
+
+	var cmd = exec.Command(step.Cmd, args...)
 
 	// Clear out env for command so not to inherit current process's environment.
 	cmd.Env = []string{}
 
-	a := make(map[string]string)
-
-	for k, v := range step.Env {
-		// TODO: Extract templating environment variables
-		tmpl, err := template.New("t").Parse(v)
-		if err != nil {
-			return err
-		}
-		vari, err := project.GetVariables()
-		var doc bytes.Buffer
-		tmpl.Execute(&doc, vari)
-		cmd.Env = append(cmd.Env, k+"="+doc.String())
-		a[k] = doc.String()
+	env, err := step.templatedEnvs()
+	if err != nil {
+		return err
 	}
 
-	journal.Record(stepStarted{Id: step.Id, Env: a, Step: step.Cmd, Args: step.Args})
+	for k, v := range env {
+		cmd.Env = append(cmd.Env, k+"="+v)
+	}
+
+	journal.Record(stepStarted{Id: step.Id, Env: env, Step: step.Cmd, Args: args})
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
-	err := cmd.Run()
 
+	err = cmd.Run()
 	if err != nil {
 		journal.Record(stepFailed{Id: step.Id})
 		return err
@@ -196,8 +253,8 @@ func buildStepContexts(logger *log.Logger, config *BuildConfig, task *project.Ta
 
 		stepContext := newStepContext(stepId, taskEnvs, step)
 		stepContext.logger = logging.CreateLogger("Step", config.logWriter)
-		stepContext.Env["CIMPLE_PROJECT_NAME"] = config.project.Name
-		stepContext.Env["CIMPLE_TASK_NAME"] = task.Name
+		stepContext.Env.TaskName = task.Name
+		stepContext.Env.Project = config.project
 
 		contexts = append(contexts, *stepContext)
 	}
