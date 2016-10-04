@@ -68,22 +68,6 @@ func newStepContext(stepId string, taskEnvs map[string]string, stepConfig projec
 	stepContext.Id = stepId
 	stepContext.Env = new(StepVars)
 
-	command, ok := stepConfig.(project.Command)
-	if ok {
-		stepContext.Cmd = command.Command
-		stepContext.Args = command.Args
-	}
-
-	script, ok := stepConfig.(project.Script)
-	if ok {
-		f, _ := ioutil.TempFile(os.TempDir(), "step")
-		f.WriteString(script.Body)
-		f.Close()
-
-		stepContext.Cmd = "/bin/sh"
-		stepContext.Args = []string{f.Name()}
-	}
-
 	wd, _ := os.Getwd()
 	stepContext.Env.buildDate = time.Now()
 	stepContext.Env.WorkingDir = wd
@@ -271,6 +255,29 @@ func buildStepContexts(logger *log.Logger, config *BuildConfig, task *project.Ta
 		stepContext.Env.TaskName = task.Name
 		stepContext.Env.Project = config.project
 		stepContext.Env.Vcs = config.repoInfo
+
+		command, ok := step.(project.Command)
+		if ok {
+			stepContext.Cmd = command.Command
+			stepContext.Args = command.Args
+		}
+
+		script, ok := step.(project.Script)
+		if ok {
+			f, _ := ioutil.TempFile(os.TempDir(), "step")
+
+			tmpl, err := template.New("t").Parse(script.Body)
+			if err != nil {
+				return nil, err
+			}
+			var doc bytes.Buffer
+			tmpl.Execute(&doc, stepContext.Env)
+			f.WriteString(doc.String())
+			f.Close()
+
+			stepContext.Cmd = "/bin/sh"
+			stepContext.Args = []string{f.Name()}
+		}
 
 		contexts = append(contexts, *stepContext)
 	}
