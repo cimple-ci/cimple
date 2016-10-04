@@ -8,6 +8,7 @@ import (
 	"log"
 	exec "os/exec"
 	"text/template"
+	"time"
 
 	"fmt"
 	"github.com/lukesmith/cimple/env"
@@ -20,6 +21,7 @@ import (
 
 type StepVars struct {
 	Cimple     *env.CimpleEnvironment
+	buildDate  time.Time
 	Project    project.Project
 	Vcs        vcs.VcsInformation
 	TaskName   string
@@ -28,10 +30,15 @@ type StepVars struct {
 	StepEnv    map[string]string
 }
 
+func (sv *StepVars) BuildDate() string {
+	return sv.buildDate.Format(time.RFC3339)
+}
+
 func (sv *StepVars) Map() map[string]string {
 	m := make(map[string]string)
 	m = merge(m, sv.HostEnv)
 
+	m["CIMPLE_BUILD_DATE"] = sv.BuildDate()
 	m["CIMPLE_VERSION"] = sv.Cimple.Version
 	m["CIMPLE_PROJECT_NAME"] = sv.Project.Name
 	m["CIMPLE_PROJECT_VERSION"] = sv.Project.Version
@@ -78,6 +85,7 @@ func newStepContext(stepId string, taskEnvs map[string]string, stepConfig projec
 	}
 
 	wd, _ := os.Getwd()
+	stepContext.Env.buildDate = time.Now()
 	stepContext.Env.WorkingDir = wd
 	stepContext.Env.Cimple = env.Cimple()
 	stepContext.Env.StepEnv = merge(taskEnvs, stepConfig.GetEnv())

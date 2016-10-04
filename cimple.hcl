@@ -50,7 +50,10 @@ DESC
 
   command goxc {
     command = "goxc"
-    args = ["-pv", "{{index .Project.Version}}", "-br", "{{index .Vcs.Branch}}"]
+    args = ["-build-ldflags",
+            "-X main.VERSION={{index .Project.Version}} -X main.BuildDate={{index .BuildDate}} -X main.Revision={{index .Vcs.Revision}}",
+            "-pv", "{{index .Project.Version}}",
+            "-br", "{{index .Vcs.Branch}}"]
   }
 
   script build-cimple-docker {
