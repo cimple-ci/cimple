@@ -94,6 +94,29 @@ script gotest {
 }
 ```
 
+##### Accessing variables
+
+Cimple makes a number of environment variables available to the scripts that are run. These
+are prefixed with `CIMPLE_`.
+
+- `CIMPLE_VERSION` - the version of Cimple
+- `CIMPLE_PROJECT_NAME` - the value specified by the `name` field
+- `CIMPLE_PROJECT_VERSION` - the value specified by the `version` field
+- `CIMPLE_WORKING_DIR` - the working directory scripts are executed within
+- `CIMPLE_TASK_NAME` - the name of the task being executed
+
+These values are also accessible within the `cimple.hcl` file using go templating. These
+are accessed removing the `CIMPLE_` and replacing the `_` in the environment variable name
+with `.`.
+
+Example:
+
+```hcl
+script example {
+  body = "echo {{index .Project.Name}}"
+}
+```
+
 ### Running a Server/Agent
 
 The Cimple CLI can be run in either Server mode or Agent mode.
@@ -126,7 +149,11 @@ When running in Server/Agent mode the Server will schedule tasks across the avai
 By design the Server does not poll or listen to hooks from SCM systems. Instead external processes send builds into the
 Cimple Server.
 
-See `scripts/trigger_build.sh` for an example of how a build can be pushed into Cimple Server.
+See `scripts/trigger_build.sh` for an example of how a build can be pushed into Cimple Server using curl. Or use the client api
+
+```shell
+cimple builds submit https://github.com/cimple-ci/cimple-ruby-example.git master
+```
 
 ### Help
 
