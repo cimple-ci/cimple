@@ -14,12 +14,14 @@ import (
 	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/project"
+	"github.com/lukesmith/cimple/vcs"
 	"os"
 )
 
 type StepVars struct {
 	Cimple     *env.CimpleEnvironment
 	Project    project.Project
+	Vcs        vcs.VcsInformation
 	TaskName   string
 	WorkingDir string
 	HostEnv    map[string]string
@@ -35,6 +37,11 @@ func (sv *StepVars) Map() map[string]string {
 	m["CIMPLE_PROJECT_VERSION"] = sv.Project.Version
 	m["CIMPLE_TASK_NAME"] = sv.TaskName
 	m["CIMPLE_WORKING_DIR"] = sv.WorkingDir
+	m["CIMPLE_VCS"] = sv.Vcs.Vcs
+	m["CIMPLE_VCS_BRANCH"] = sv.Vcs.Branch
+	m["CIMPLE_VCS_REVISION"] = sv.Vcs.Revision
+	m["CIMPLE_VCS_REMOTE_URL"] = sv.Vcs.RemoteUrl
+	m["CIMPLE_VCS_REMOTE_NAME"] = sv.Vcs.RemoteName
 
 	m = merge(m, sv.StepEnv)
 
@@ -87,7 +94,7 @@ func (step *StepContext) templatedArgs() ([]string, error) {
 			return nil, err
 		}
 		var doc bytes.Buffer
-		tmpl.Execute(&doc, step.Args)
+		tmpl.Execute(&doc, step.Env)
 		args = append(args, doc.String())
 	}
 
@@ -255,6 +262,7 @@ func buildStepContexts(logger *log.Logger, config *BuildConfig, task *project.Ta
 		stepContext.logger = logging.CreateLogger("Step", config.logWriter)
 		stepContext.Env.TaskName = task.Name
 		stepContext.Env.Project = config.project
+		stepContext.Env.Vcs = config.repoInfo
 
 		contexts = append(contexts, *stepContext)
 	}

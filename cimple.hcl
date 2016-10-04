@@ -50,7 +50,7 @@ DESC
 
   command goxc {
     command = "goxc"
-    args = ["-pv", "{{index .Project.Version}}"]
+    args = ["-pv", "{{index .Project.Version}}", "-br", "{{index .Vcs.Branch}}"]
   }
 
   script build-cimple-docker {

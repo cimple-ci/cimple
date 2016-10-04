@@ -104,6 +104,11 @@ are prefixed with `CIMPLE_`.
 - `CIMPLE_PROJECT_VERSION` - the value specified by the `version` field
 - `CIMPLE_WORKING_DIR` - the working directory scripts are executed within
 - `CIMPLE_TASK_NAME` - the name of the task being executed
+- `CIMPLE_VCS` - the name of the vcs
+- `CIMPLE_VCS_BRANCH` - the name of the vcs branch
+- `CIMPLE_VCS_REVISION` - the revision of the vcs
+- `CIMPLE_VCS_REMOTE_URL` - the url of the vcs remote
+- `CIMPLE_VCS_REMOTE_NAME` - the name of the vcs remote
 
 These values are also accessible within the `cimple.hcl` file using go templating. These
 are accessed removing the `CIMPLE_` and replacing the `_` in the environment variable name

@@ -80,6 +80,14 @@ func Test_StepVars_Map(t *testing.T) {
 		Version: "4.3.1",
 	}
 	vars.Project = *p
+	v := &vcs.VcsInformation{
+		Vcs:        "git",
+		Branch:     "my-branch",
+		Revision:   "12345",
+		RemoteUrl:  "git@github.com/cimple",
+		RemoteName: "origin",
+	}
+	vars.Vcs = *v
 
 	m := vars.Map()
 
@@ -101,6 +109,26 @@ func Test_StepVars_Map(t *testing.T) {
 
 	if m["CIMPLE_WORKING_DIR"] != "/c/temp" {
 		t.Fatalf("Expected CIMPLE_WORKING_DIR to be /c/temp - was %s", m["CIMPLE_WORKING_DIR"])
+	}
+
+	if m["CIMPLE_VCS"] != "git" {
+		t.Fatalf("Expected CIMPLE_VCS to be git - was %s", m["CIMPLE_VCS"])
+	}
+
+	if m["CIMPLE_VCS_BRANCH"] != "my-branch" {
+		t.Fatalf("Expected CIMPLE_VCS_BRANCH to be my-branch - was %s", m["CIMPLE_VCS_BRANCH"])
+	}
+
+	if m["CIMPLE_VCS_REVISION"] != "12345" {
+		t.Fatalf("Expected CIMPLE_VCS_REVISION to be 12345 - was %s", m["CIMPLE_VCS_REVISION"])
+	}
+
+	if m["CIMPLE_VCS_REMOTE_URL"] != "git@github.com/cimple" {
+		t.Fatalf("Expected CIMPLE_VCS_REMOTE_URL to be git@github.com/cimple - was %s", m["CIMPLE_VCS_REMOTE_URL"])
+	}
+
+	if m["CIMPLE_VCS_REMOTE_NAME"] != "origin" {
+		t.Fatalf("Expected CIMPLE_VCS_REMOTE_NAME to be origin - was %s", m["CIMPLE_VCS_REMOTE_NAME"])
 	}
 
 	if m["HOST_ENV"] != "4212" {
