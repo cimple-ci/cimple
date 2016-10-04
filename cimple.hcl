@@ -48,12 +48,15 @@ DESC
 
   skip = true
 
-  command goxc {
+  script goxc {
     command = "goxc"
-    args = ["-build-ldflags",
-            "-X main.VERSION={{index .Project.Version}} -X main.BuildDate={{index .BuildDate}} -X main.Revision={{index .Vcs.Revision}}",
-            "-pv", "{{index .Project.Version}}",
-            "-br", "{{index .Vcs.Branch}}"]
+    body = <<BODY
+goxc -build-ldflags \
+  "-X main.VERSION={{index .Project.Version}} -X main.BuildDate={{index .BuildDate}} -X main.Revision={{index .Vcs.Revision}}" \
+  -pv {{index .Project.Version}} \
+  -br {{index .Vcs.Branch}} \
+  -pr alpha
+BODY
   }
 
   script build-cimple-docker {
