@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/lukesmith/cimple/api"
+	"github.com/cimple-ci/cimple-go-api"
 	"github.com/olekukonko/tablewriter"
 	"github.com/urfave/cli"
 )
