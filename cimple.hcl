@@ -46,8 +46,6 @@ task package {
 Packages Cimple for release
 DESC
 
-  skip = true
-
   script goxc {
     command = "goxc"
     body = <<BODY
@@ -61,9 +59,7 @@ BODY
 
   script build-cimple-docker {
     body = <<SCRIPT
-docker build -t cimple-base -f Dockerfile .
-docker build -t cimple-server -f server.Dockerfile .
-docker build -t cimple-agent -f agent.Dockerfile .
+docker build --build-arg CIMPLE_VERSION={{index .Project.Version}}-{{index .Vcs.Branch}}.alpha -t cimple -f Dockerfile .
 SCRIPT
   }
 }

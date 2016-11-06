@@ -1,15 +1,22 @@
-FROM alpine
+FROM progrium/busybox
 
-RUN apk update
-RUN apk add git
-
-COPY ./output/downloads/snapshot/cimple_linux_amd64.tar.gz /opt/cimple_linux_amd64.tar.gz
-COPY ./frontend/templates /opt/frontend/templates
-COPY ./frontend/assets /opt/frontend/assets
+ARG CIMPLE_VERSION
 
 WORKDIR /opt
-
-RUN tar xvzf /opt/cimple_linux_amd64.tar.gz -C /opt
-RUN ln -s /opt/cimple_linux_amd64/cimple /usr/local/bin/cimple
-
 ENTRYPOINT ["cimple"]
+
+ENV PATH /opt/cimple/bin:$PATH
+
+RUN opkg-install git
+
+COPY ./output/downloads/$CIMPLE_VERSION/cimple_${CIMPLE_VERSION}_linux_amd64.tar.gz /opt/cimple_linux_amd64.tar.gz
+COPY ./server/frontend/templates /opt/frontend/templates
+COPY ./server/frontend/assets /opt/frontend/assets
+
+RUN cd /tmp \
+    && zcat /opt/cimple_linux_amd64.tar.gz | tar -xvf - \
+    && chmod +x /tmp/cimple_${CIMPLE_VERSION}_linux_amd64/cimple \
+    && mkdir -p /opt/cimple/bin \
+    && mv /tmp/cimple_${CIMPLE_VERSION}_linux_amd64/cimple /opt/cimple/bin \
+    && rm -rf /tmp/cimple_${CIMPLE_VERSION}_linux_amd64
+
