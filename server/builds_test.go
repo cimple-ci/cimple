@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
 	"net/http"
@@ -80,30 +81,19 @@ func Test_ListBuilds(t *testing.T) {
 
 	res, err := http.DefaultClient.Do(request)
 
-	if err != nil {
-		t.Error(err)
-	} else {
-		if res.StatusCode != 200 {
-			t.Errorf("OK expected: %d", res.StatusCode)
-		}
+	assert := assert.New(t)
 
-		if res.Header["Content-Type"][0] != "application/json" {
-			t.Errorf("Expected content-type to be application/json - was %s", res.Header["Content-Type"])
-		}
+	if assert.Nil(err) {
+		assert.Equal(200, res.StatusCode, "OK expected")
+		assert.Equal("application/json", res.Header["Content-Type"][0])
 
 		var m []map[string]interface{}
 		json.NewDecoder(res.Body).Decode(&m)
-		if m[0]["id"] != queuedItem.Id().String() {
-			t.Errorf("Expected id to be %s - was %s", queuedItem.Id(), m[0]["id"])
-		}
+		assert.Equal(queuedItem.Id().String(), m[0]["id"])
 
 		submissionDate, _ := time.Parse(time.RFC3339, m[0]["submission_date"].(string))
-		if submissionDate != queuedItem.SubmissionDate() {
-			t.Errorf("Expected submission_date to be %s - was %s", queuedItem.SubmissionDate(), m[0]["submission_date"])
-		}
+		assert.Equal(queuedItem.SubmissionDate().UTC(), submissionDate, "they should equal")
 
-		if m[0]["build_url"] != "http://cimple.test/builds/"+queuedItem.Id().String() {
-			t.Errorf("Expected build_url not to be %s - %s", m[0]["build_url"], server.URL)
-		}
+		assert.Equal("http://cimple.test/builds/"+queuedItem.Id().String(), m[0]["build_url"])
 	}
 }

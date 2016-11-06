@@ -23,6 +23,7 @@ import:
   - package: github.com/kardianos/osext
   - package: github.com/olekukonko/tablewriter
   - package: github.com/fatih/color
+  - package: github.com/stretchr/testify
   # Get and manage a package with Git:
   #- package: github.com/Masterminds/cookoo
   #  # The repository URL
