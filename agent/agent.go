@@ -1,12 +1,10 @@
 package agent
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/kardianos/osext"
 	"github.com/lukesmith/cimple/messages"
 	"github.com/lukesmith/cimple/vcs/git"
@@ -41,11 +39,12 @@ func DefaultConfig() (*Config, error) {
 }
 
 type Agent struct {
-	Id     uuid.UUID
-	config *Config
-	logger *log.Logger
-	conn   *serverConnection
-	router *messages.Router
+	Id        uuid.UUID
+	config    *Config
+	logger    *log.Logger
+	conn      *serverConnection
+	router    *messages.Router
+	connected bool
 }
 
 func (a *Agent) String() string {
@@ -84,15 +83,26 @@ func NewAgent(config *Config, logger *log.Logger) (*Agent, error) {
 	return a, nil
 }
 
+func (agent *Agent) Listen() {
+	go func() {
+		for {
+			msg, err := agent.read()
+			if err != nil {
+				agent.logger.Printf("Error reading: %+v", err)
+				break
+			} else {
+				name := reflect.TypeOf(msg.Body).Name()
+				agent.logger.Printf("Received %s:%s", name, msg.Id)
+				agent.router.Route(msg.Body)
+			}
+		}
+
+		agent.logger.Printf("Stopped listening")
+	}()
+}
+
 func (agent *Agent) Start() error {
 	agent.logger.Printf("Starting agent %s", agent)
-
-	url := fmt.Sprintf("ws://%s:%s/agents/connection?id=%s", agent.config.ServerAddr, agent.config.ServerPort, agent.Id)
-	c, _, err := websocket.DefaultDialer.Dial(url, nil)
-	if err != nil {
-		return err
-	}
-	agent.conn = newWebsocketServerConnection(c, agent.logger)
 
 	agent.router.OnError(func(m interface{}) {
 		agent.logger.Printf("Received an error routing %+v", m)
@@ -149,26 +159,51 @@ func (agent *Agent) Start() error {
 		agent.logger.Printf("Confirmed %s", msg.Text)
 	})
 
-	defer agent.conn.Close()
+	conn, err := newWebsocketServerConnection(agent.config.ServerAddr, agent.config.ServerPort, agent.Id, agent.logger)
+	if err != nil {
+		return err
+	}
+
+	maintainConnection(agent, conn)
+
+	for {
+	}
+}
+
+func maintainConnection(agent *Agent, conn *serverConnection) error {
+	agent.conn = conn
 
 	go func() {
-		defer agent.conn.Close()
 		for {
-			msg, err := agent.read()
-			if err != nil {
-				agent.logger.Printf("Err reading: %+v", err)
-			} else {
-				name := reflect.TypeOf(msg.Body).Name()
-				agent.logger.Printf("Received %s:%s", name, msg.Id)
-				agent.router.Route(msg.Body)
+			select {
+			case <-agent.conn.Connected:
+				agent.logger.Printf("Agent connected")
+				agent.Listen()
+				agent.Register()
+			case <-agent.conn.Disconnected:
+				agent.logger.Print("Agent disconnected")
+				reconnect(agent)
 			}
 		}
 	}()
 
-	agent.Register()
-	agent.conn.PingServer(agent.Id)
+	err := agent.conn.Connect()
+	if err != nil {
+		reconnect(agent)
+	}
 
 	return nil
+}
+
+func reconnect(agent *Agent) {
+	select {
+	case <-time.After(time.Second * 1):
+		conn, err := newWebsocketServerConnection(agent.config.ServerAddr, agent.config.ServerPort, agent.Id, agent.logger)
+		if err != nil {
+			agent.logger.Printf("Unable to connect %+v", err)
+		}
+		maintainConnection(agent, conn)
+	}
 }
 
 func (agent Agent) Register() error {
