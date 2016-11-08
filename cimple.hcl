@@ -53,13 +53,19 @@ goxc -build-ldflags \
   "-X main.VERSION={{index .Project.Version}} -X main.BuildDate={{index .BuildDate}} -X main.Revision={{index .Vcs.Revision}}" \
   -pv {{index .Project.Version}} \
   -br {{index .Vcs.Branch}} \
-  -pr alpha
 BODY
   }
 
   script build-cimple-docker {
     body = <<SCRIPT
-docker build --build-arg CIMPLE_VERSION={{index .Project.Version}}-{{index .Vcs.Branch}}.alpha -t cimple -f Dockerfile .
+docker build --build-arg CIMPLE_VERSION={{index .Project.Version}}-{{index .Vcs.Branch}} -t cimple -f Dockerfile .
+SCRIPT
+  }
+
+  script tag-cimple-docker {
+    body = <<SCRIPT
+docker tag cimple cimpleci/cimple:latest
+docker tag cimpleci/cimple:latest cimpleci/cimple:{{index .Project.Version}}
 SCRIPT
   }
 }

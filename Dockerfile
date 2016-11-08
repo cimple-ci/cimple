@@ -2,8 +2,9 @@ FROM progrium/busybox
 
 ARG CIMPLE_VERSION
 
-WORKDIR /opt
+WORKDIR /opt/workspace
 ENTRYPOINT ["cimple"]
+VOLUME ["/opt/workspace"]
 
 ENV PATH /opt/cimple/bin:$PATH
 
@@ -18,5 +19,6 @@ RUN cd /tmp \
     && chmod +x /tmp/cimple_${CIMPLE_VERSION}_linux_amd64/cimple \
     && mkdir -p /opt/cimple/bin \
     && mv /tmp/cimple_${CIMPLE_VERSION}_linux_amd64/cimple /opt/cimple/bin \
-    && rm -rf /tmp/cimple_${CIMPLE_VERSION}_linux_amd64
+    && rm -rf /tmp/cimple_linux_amd64 \
+    && rm /opt/cimple_linux_amd64.tar.gz
 
