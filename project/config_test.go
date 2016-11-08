@@ -1,6 +1,8 @@
 package project
 
 import (
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -122,4 +124,32 @@ func TestTaskNamesContainValidCharacters(t *testing.T) {
 	if err == nil {
 		t.Fatalf("file: %s\n\nExpected error due to invalid task names", file)
 	}
+}
+
+func TestMissingName(t *testing.T) {
+	const testconfig = `
+	version = "0.0.1"
+	`
+
+	_, err := Load(testconfig)
+	assert.Equal(t, fmt.Errorf("'name' was not specified"), err)
+}
+
+func TestMissingVersion(t *testing.T) {
+	const testconfig = `
+	name = "test"
+	`
+
+	_, err := Load(testconfig)
+	assert.Equal(t, fmt.Errorf("'version' was not specified"), err)
+}
+
+func TestDescriptionOptional(t *testing.T) {
+	const testconfig = `
+	name = "test"
+	version = "0.0.1"
+	`
+
+	_, err := Load(testconfig)
+	assert.Nil(t, err)
 }
