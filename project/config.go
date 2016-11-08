@@ -82,7 +82,11 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
-	obj, err := hcl.Parse(string(d))
+	return Load(string(d))
+}
+
+func Load(str string) (*Config, error) {
+	obj, err := hcl.Parse(str)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +116,19 @@ func parseConfig(obj *ast.File) (*Config, error) {
 		return nil, err
 	}
 
+	for _, fieldName := range []string{"name", "version"} {
+		if _, ok := m[fieldName]; !ok {
+			return nil, fmt.Errorf("'%s' was not specified", fieldName)
+		}
+	}
+
 	result.Project.Name = m["name"].(string)
-	result.Project.Description = m["description"].(string)
 	result.Project.Version = m["version"].(string)
+
+	if val, ok := m["description"]; ok {
+		result.Project.Description = val.(string)
+	}
+
 	result.Project.Env = make(map[string]string)
 
 	list, ok := obj.Node.(*ast.ObjectList)
@@ -289,10 +303,6 @@ func parseScripts(result map[string]Step, list *ast.ObjectList) error {
 
 func validateConfig(cfg *Config) error {
 	var issues = []string{}
-
-	if len(cfg.Tasks) == 0 {
-		issues = append(issues, "At least 1 task must be defined")
-	}
 
 	r, _ := regexp.Compile("[a-z0-9_]+")
 
