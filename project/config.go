@@ -23,6 +23,14 @@ type Task struct {
 	Skip        bool
 }
 
+func (t Task) GetID() string {
+	return t.Name
+}
+
+func (t Task) GetDependencies() []string {
+	return t.Depends
+}
+
 type Step interface {
 	GetSkip() bool
 	GetEnv() map[string]string

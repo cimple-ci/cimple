@@ -146,13 +146,22 @@ func (step *StepContext) execute(journal journal.Journal, stdout io.Writer, stde
 }
 
 type BuildTask struct {
-	Name  string
-	Steps []StepContext
+	Name         string
+	Steps        []StepContext
+	dependencies []string
+}
+
+func (bt BuildTask) GetID() string {
+	return bt.Name
+}
+
+func (bt BuildTask) GetDependencies() []string {
+	return bt.dependencies
 }
 
 type Build struct {
 	ID     int
-	Tasks  []BuildTask
+	tasks  map[string]*BuildTask
 	config *BuildConfig
 	logger *log.Logger
 }
@@ -171,6 +180,7 @@ func NewBuild(config *BuildConfig) (*Build, error) {
 	build.config = config
 	build.logger = logging.CreateLogger("Build", config.logWriter)
 	build.ID = 1
+	build.tasks = make(map[string]*BuildTask)
 
 	for _, task := range config.tasks {
 		if len(config.ExplicitTasks) != 0 {
@@ -185,12 +195,17 @@ func NewBuild(config *BuildConfig) (*Build, error) {
 			}
 		}
 
-		contexts, err := buildStepContexts(build.logger, config, task)
+		contexts, err := buildStepContexts(build.logger, build.config, task)
 		if err != nil {
 			return nil, err
 		}
-		buildTask := BuildTask{task.Name, contexts}
-		build.Tasks = append(build.Tasks, buildTask)
+
+		buildTask := &BuildTask{
+			Name:         task.Name,
+			Steps:        contexts,
+			dependencies: task.Depends,
+		}
+		build.tasks[task.Name] = buildTask
 	}
 
 	return build, nil
@@ -200,28 +215,43 @@ func (build *Build) Run() error {
 	build.logger.Printf("Running build #%d", build.ID)
 	build.config.journal.Record(buildStarted{Repo: build.config.repoInfo})
 
-	for _, task := range build.Tasks {
-		stepIds := []string{}
+	tasks := []TaskNode{}
+	for _, t := range build.tasks {
+		tasks = append(tasks, t)
+	}
 
-		for _, step := range task.Steps {
-			stepIds = append(stepIds, step.Id)
-		}
-
-		build.config.journal.Record(taskStarted{Id: task.Name, Steps: stepIds})
-
-		for _, step := range task.Steps {
-			err := step.execute(build.config.journal, build.config.logWriter, build.config.logWriter)
-			if err != nil {
-				build.config.journal.Record(taskFailed{Id: task.Name})
-				return err
-			}
-		}
-
-		build.config.journal.Record(taskSuccessful{Id: task.Name})
+	buildStrategy := NewBuildStrategy(tasks)
+	err := buildStrategy.Build(func(taskName string) error {
+		return build.runTask(build.tasks[taskName])
+	})
+	if err != nil {
+		return err
 	}
 
 	build.config.journal.Record("Build finished successfully")
 
+	return nil
+}
+
+func (build *Build) runTask(task *BuildTask) error {
+	build.logger.Printf("Running task %s", task.Name)
+	stepIds := []string{}
+
+	for _, step := range task.Steps {
+		stepIds = append(stepIds, step.Id)
+	}
+
+	build.config.journal.Record(taskStarted{Id: task.Name, Steps: stepIds})
+
+	for _, step := range task.Steps {
+		err := step.execute(build.config.journal, build.config.logWriter, build.config.logWriter)
+		if err != nil {
+			build.config.journal.Record(taskFailed{Id: task.Name})
+			return err
+		}
+	}
+
+	build.config.journal.Record(taskSuccessful{Id: task.Name})
 	return nil
 }
 
