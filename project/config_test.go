@@ -32,6 +32,7 @@ func TestParse(t *testing.T) {
 		Tasks: map[string]*Task{
 			"echo": &Task{
 				Description: "Description of the echo task",
+				Depends:     []string{},
 				Name:        "echo",
 				Skip:        true,
 				Archive:     []string{"cow.txt"},
@@ -65,6 +66,16 @@ func TestParse(t *testing.T) {
 						},
 					},
 				},
+			},
+			"publish": &Task{
+				Description: "Publish packages",
+				Depends:     []string{"echo"},
+				Name:        "publish",
+				Skip:        false,
+				Archive:     []string{},
+				Env:         map[string]string{},
+				StepOrder:   []string{},
+				Steps:       map[string]Step{},
 			},
 		},
 	}

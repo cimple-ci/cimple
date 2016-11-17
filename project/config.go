@@ -14,12 +14,21 @@ import (
 
 type Task struct {
 	Description string
+	Depends     []string
 	Name        string
 	Steps       map[string]Step
 	StepOrder   []string
 	Archive     []string
 	Env         map[string]string
 	Skip        bool
+}
+
+func (t Task) GetID() string {
+	return t.Name
+}
+
+func (t Task) GetDependencies() []string {
+	return t.Depends
 }
 
 type Step interface {
@@ -165,6 +174,9 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 	task.Name = item.Keys[0].Token.Value().(string)
 	task.Env = make(map[string]string)
 	task.Steps = make(map[string]Step)
+	task.StepOrder = []string{}
+	task.Depends = []string{}
+	task.Archive = []string{}
 
 	if err := mapstructure.WeakDecode(m, &task); err != nil {
 		return err
@@ -212,7 +224,7 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 }
 
 func stepOrder(o *ast.ObjectList) ([]string, error) {
-	var result []string
+	result := []string{}
 
 	for _, item := range o.Items {
 		for _, keyItem := range item.Keys {

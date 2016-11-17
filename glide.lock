@@ -1,6 +1,8 @@
-hash: e2b776435117c86fb2a593cf56f2a599839341910004990c7853cde069dc9f49
-updated: 2016-10-03T22:14:21.415103731+01:00
+hash: a73e8acbf9ac0e7fb5dab47183f2dcc8cd62caa85f1b95ebdd16b475d0bc245a
+updated: 2016-11-11T21:41:02.478379437Z
 imports:
+- name: github.com/cimple-ci/cimple-go-api
+  version: c24faf776385e5df062115bb536dd85fe246188b
 - name: github.com/crewjam/rfc5424
   version: 2edeb8956a7878fd604eee37b77385477c984687
 - name: github.com/fatih/color
@@ -11,6 +13,8 @@ imports:
   version: 26a6070f849969ba72b72256e9f14cf519751690
 - name: github.com/gorilla/websocket
   version: 3986be78bf859e01f01af631ad76da5b269d270c
+- name: github.com/gyuho/goraph
+  version: 85118305aa83e5fded7edb3c7309894fc2bb9417
 - name: github.com/hashicorp/hcl
   version: 5af5025c48e8bf0e03551b8757d92a774b9f0694
   subpackages:

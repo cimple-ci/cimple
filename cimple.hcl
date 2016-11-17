@@ -4,7 +4,7 @@ cimple {
 
 name = "Cimple"
 description = "Cimple CI build tasks"
-version = "0.0.1"
+version = "0.0.2-alpha"
 
 env {
   GOPATH = "{{index .HostEnv \"GOPATH\"}}"
@@ -42,9 +42,8 @@ DESC
 }
 
 task package {
-  description = <<DESC
-Packages Cimple for release
-DESC
+  description = "Packages Cimple for release"
+  depends = ["test", "fix"]
 
   script goxc {
     command = "goxc"
@@ -66,6 +65,18 @@ SCRIPT
     body = <<SCRIPT
 docker tag cimple cimpleci/cimple:latest
 docker tag cimpleci/cimple:latest cimpleci/cimple:{{index .Project.Version}}
+SCRIPT
+  }
+}
+
+task publish {
+  depends = ["package"]
+
+  script publish-cimple-docker {
+    body = <<SCRIPT
+# docker push cimpleci/cimple:latest
+# docker push cimpleci/cimple:{{index .Project.Version}}
+echo pushing
 SCRIPT
   }
 }

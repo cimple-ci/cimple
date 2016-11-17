@@ -48,3 +48,8 @@ task "echo" {
 
   archive = ["cow.txt"]
 }
+
+task "publish" {
+  description = "Publish packages"
+  depends = ["echo"]
+}
