@@ -2,7 +2,6 @@ package build
 
 import (
 	"github.com/gyuho/goraph"
-	"log"
 	"sort"
 )
 
@@ -111,7 +110,6 @@ func (bs buildStrategy) processNode(rc *runnerContext, node goraph.Node) error {
 	}
 
 	if _, ok := bs.builtTasks[node]; ok {
-		log.Printf("%s has not been built", node.String())
 		return nil
 	}
 

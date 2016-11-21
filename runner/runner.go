@@ -17,6 +17,7 @@ import (
 
 type RunOptions struct {
 	Journal *JournalSettings
+	Context string
 }
 
 type JournalSettings struct {
@@ -63,6 +64,7 @@ func Run(options *RunOptions, explicitTasks []string) {
 	journal := journal.NewJournal(journalWriters)
 	buildConfig := build.NewBuildConfig(buildId, logWriter, journal, cfg, *r)
 	buildConfig.ExplicitTasks = explicitTasks
+	buildConfig.RunContext = options.Context
 
 	err = executeBuild(buildConfig)
 	if err != nil {

@@ -17,13 +17,18 @@ func Run() cli.Command {
 			},
 			cli.StringFlag{
 				Name:  "journal-driver",
-				Usage: "specifiy the `driver` to send journal messages to",
+				Usage: "specifiy the `DRIVER` to send journal messages to. Available options \"console\"",
 				Value: "console",
 			},
 			cli.StringFlag{
 				Name:  "journal-format",
-				Usage: "specify the output `FORMAT`",
+				Usage: "specify the output `FORMAT`. Available options \"text\", \"json\"",
 				Value: "text",
+			},
+			cli.StringFlag{
+				Name:  "run-context",
+				Usage: "specify the `CONTEXT` in which to execute the run in. Available options \"local\", \"server\"",
+				Value: "local",
 			},
 		},
 		Action: func(c *cli.Context) {
@@ -32,6 +37,7 @@ func Run() cli.Command {
 					Driver: c.String("journal-driver"),
 					Format: c.String("journal-format"),
 				},
+				Context: c.String("run-context"),
 			}
 			runner.Run(runOptions, c.StringSlice("task"))
 		},

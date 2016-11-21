@@ -149,6 +149,8 @@ type BuildTask struct {
 	Name         string
 	Steps        []StepContext
 	dependencies []string
+	limitTo      string
+	skip         bool
 }
 
 func (bt BuildTask) GetID() string {
@@ -183,18 +185,6 @@ func NewBuild(config *BuildConfig) (*Build, error) {
 	build.tasks = make(map[string]*BuildTask)
 
 	for _, task := range config.tasks {
-		if len(config.ExplicitTasks) != 0 {
-			if contains(config.ExplicitTasks, task.Name) {
-				if task.Skip {
-					build.logger.Printf("Unskipping task %s as explicitly specified", task.Name)
-					task.Skip = false
-				}
-			} else {
-				build.logger.Printf("Skipping task %s as not explicitly specified", task.Name)
-				task.Skip = true
-			}
-		}
-
 		contexts, err := buildStepContexts(build.logger, build.config, task)
 		if err != nil {
 			return nil, err
@@ -203,12 +193,35 @@ func NewBuild(config *BuildConfig) (*Build, error) {
 		buildTask := &BuildTask{
 			Name:         task.Name,
 			Steps:        contexts,
+			skip:         task.Skip,
 			dependencies: task.Depends,
+			limitTo:      task.LimitTo,
 		}
 		build.tasks[task.Name] = buildTask
 	}
 
 	return build, nil
+}
+
+func (build *Build) checkSkip(task *BuildTask) (string, bool) {
+	if len(build.config.ExplicitTasks) != 0 {
+		if contains(build.config.ExplicitTasks, task.Name) {
+			if task.skip {
+				build.logger.Printf("Unskipping task %s as explicitly specified", task.Name)
+				return "", false
+			}
+		} else {
+			build.logger.Printf("Skipping task %s as not explicitly specified", task.Name)
+			return "Explicit tasks defined", true
+		}
+	}
+
+	if len(task.limitTo) != 0 && task.limitTo != build.config.RunContext {
+		build.logger.Printf("Skipping task %s. Is limited to run in %s context. Current context is %s", task.Name, task.limitTo, build.config.RunContext)
+		return "Outside of run context", true
+	}
+
+	return "", false
 }
 
 func (build *Build) Run() error {
@@ -234,6 +247,11 @@ func (build *Build) Run() error {
 }
 
 func (build *Build) runTask(task *BuildTask) error {
+	if reason, skip := build.checkSkip(task); skip {
+		build.config.journal.Record(taskSkipped{Id: task.Name, Reason: reason})
+		return nil
+	}
+
 	build.logger.Printf("Running task %s", task.Name)
 	stepIds := []string{}
 
@@ -257,11 +275,6 @@ func (build *Build) runTask(task *BuildTask) error {
 
 func buildStepContexts(logger *log.Logger, config *BuildConfig, task *project.Task) ([]StepContext, error) {
 	var contexts []StepContext
-
-	if task.Skip {
-		logger.Printf("Skipping task: %s", task.Name)
-		return []StepContext{}, nil
-	}
 
 	taskEnvs := merge(config.project.Env, task.Env)
 

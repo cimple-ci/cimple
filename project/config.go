@@ -21,6 +21,7 @@ type Task struct {
 	Archive     []string
 	Env         map[string]string
 	Skip        bool
+	LimitTo     string
 }
 
 func (t Task) GetID() string {
@@ -180,6 +181,10 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 
 	if err := mapstructure.WeakDecode(m, &task); err != nil {
 		return err
+	}
+
+	if val, ok := m["limit_to"]; ok {
+		task.LimitTo = val.(string)
 	}
 
 	var listVal *ast.ObjectList

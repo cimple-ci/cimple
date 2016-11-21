@@ -215,7 +215,7 @@ func (agent Agent) Register() error {
 }
 
 func executeCimpleRun(workingDir string, stdout io.Writer, stderr io.Writer) error {
-	args := []string{"run", "--journal-driver", "console", "--journal-format", "json"}
+	args := []string{"run", "--run-context", "server", "--journal-driver", "console", "--journal-format", "json"}
 	filename, _ := osext.Executable()
 	var cmd = exec.Command(filename, args...)
 	cmd.Dir = workingDir
