@@ -71,6 +71,7 @@ SCRIPT
 
 task publish {
   depends = ["package"]
+  limit_to = "server"
 
   script publish-cimple-docker {
     body = <<SCRIPT

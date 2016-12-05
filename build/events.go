@@ -28,6 +28,11 @@ type taskStarted struct {
 	Steps []string
 }
 
+type taskSkipped struct {
+	Id     string
+	Reason string
+}
+
 type taskFailed struct {
 	Id string
 }

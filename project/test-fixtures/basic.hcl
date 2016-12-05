@@ -52,4 +52,5 @@ task "echo" {
 task "publish" {
   description = "Publish packages"
   depends = ["echo"]
+  limit_to = "server"
 }

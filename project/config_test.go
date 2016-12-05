@@ -35,6 +35,7 @@ func TestParse(t *testing.T) {
 				Depends:     []string{},
 				Name:        "echo",
 				Skip:        true,
+				LimitTo:     "",
 				Archive:     []string{"cow.txt"},
 				Env: map[string]string{
 					"task_env": "global",
@@ -76,6 +77,7 @@ func TestParse(t *testing.T) {
 				Env:         map[string]string{},
 				StepOrder:   []string{},
 				Steps:       map[string]Step{},
+				LimitTo:     "server",
 			},
 		},
 	}

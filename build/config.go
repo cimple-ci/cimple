@@ -10,6 +10,7 @@ import (
 type BuildConfig struct {
 	BuildId       string
 	ExplicitTasks []string
+	RunContext    string
 	logWriter     io.Writer
 	journal       journal.Journal
 	project       project.Project
@@ -19,11 +20,12 @@ type BuildConfig struct {
 
 func NewBuildConfig(buildId string, logWriter io.Writer, journal journal.Journal, cfg *project.Config, ri vcs.VcsInformation) *BuildConfig {
 	return &BuildConfig{
-		BuildId:   buildId,
-		logWriter: logWriter,
-		journal:   journal,
-		project:   cfg.Project,
-		tasks:     cfg.Tasks,
-		repoInfo:  ri,
+		BuildId:    buildId,
+		RunContext: "",
+		logWriter:  logWriter,
+		journal:    journal,
+		project:    cfg.Project,
+		tasks:      cfg.Tasks,
+		repoInfo:   ri,
 	}
 }
