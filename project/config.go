@@ -12,6 +12,11 @@ import (
 	"strings"
 )
 
+type StepParser interface {
+	GetToken() string
+	Parse(list *ast.ObjectList) ([]Step, error)
+}
+
 type Task struct {
 	Description string
 	Depends     []string
@@ -34,36 +39,8 @@ func (t Task) GetDependencies() []string {
 
 type Step interface {
 	GetSkip() bool
+	GetName() string
 	GetEnv() map[string]string
-}
-
-type Script struct {
-	Skip bool
-	Body string
-	Env  map[string]string
-}
-
-func (s Script) GetSkip() bool {
-	return s.Skip
-}
-
-func (s Script) GetEnv() map[string]string {
-	return s.Env
-}
-
-type Command struct {
-	Command string
-	Args    []string
-	Env     map[string]string
-	Skip    bool
-}
-
-func (c Command) GetSkip() bool {
-	return c.Skip
-}
-
-func (c Command) GetEnv() map[string]string {
-	return c.Env
 }
 
 type Config struct {
@@ -192,21 +169,29 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 		listVal = ot.List
 	}
 
+	stepParsers := []StepParser{&ScriptStepParser{}, &CommandStepParser{}}
+
 	so, err := stepOrder(listVal)
 	if err != nil {
 		return err
 	}
 	task.StepOrder = so
 
-	if o := listVal.Filter("command"); len(o.Items) > 0 {
-		if err := parseCommands(task.Steps, o); err != nil {
-			return err
-		}
-	}
+	for _, sp := range stepParsers {
+		if o := listVal.Filter(sp.GetToken()); len(o.Items) > 0 {
+			steps, err := sp.Parse(o)
+			if err != nil {
+				return err
+			}
 
-	if o := listVal.Filter("script"); len(o.Items) > 0 {
-		if err := parseScripts(task.Steps, o); err != nil {
-			return err
+			for _, st := range steps {
+				if _, exists := task.Steps[st.GetName()]; exists {
+					return &ConfigError{
+						Issues: []string{fmt.Sprintf("A step named %s exists multiple times", st.GetName())},
+					}
+				}
+				task.Steps[st.GetName()] = st
+			}
 		}
 	}
 
@@ -238,84 +223,11 @@ func stepOrder(o *ast.ObjectList) ([]string, error) {
 			if key == "command" || key == "script" {
 				n := item.Keys[1].Token.Value().(string)
 				result = append(result, n)
-
-				if count(result, n) > 1 {
-					return nil, &ConfigError{
-						Issues: []string{fmt.Sprintf("A step named %s exists multiple times", n)},
-					}
-				}
 			}
 		}
 	}
 
 	return result, nil
-}
-
-func parseCommands(steps map[string]Step, list *ast.ObjectList) error {
-	for _, item := range list.Items {
-		var m map[string]interface{}
-		if err := hcl.DecodeObject(&m, item.Val); err != nil {
-			return err
-		}
-
-		delete(m, "env")
-
-		name := item.Keys[0].Token.Value().(string)
-		var c Command
-		c.Env = make(map[string]string)
-		if err := mapstructure.WeakDecode(m, &c); err != nil {
-			log.Fatal(err)
-			return err
-		}
-
-		steps[name] = c
-
-		var listVal *ast.ObjectList
-		if ot, ok := item.Val.(*ast.ObjectType); ok {
-			listVal = ot.List
-		}
-
-		if o := listVal.Filter("env"); len(o.Items) > 0 {
-			if err := parseEnvs(c.Env, o); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func parseScripts(result map[string]Step, list *ast.ObjectList) error {
-	for _, item := range list.Items {
-		var m map[string]interface{}
-		if err := hcl.DecodeObject(&m, item.Val); err != nil {
-			return err
-		}
-
-		delete(m, "env")
-
-		name := item.Keys[0].Token.Value().(string)
-		var c Script
-		c.Env = make(map[string]string)
-		if err := mapstructure.WeakDecode(m, &c); err != nil {
-			log.Fatal(err)
-			return err
-		}
-		result[name] = c
-
-		var listVal *ast.ObjectList
-		if ot, ok := item.Val.(*ast.ObjectType); ok {
-			listVal = ot.List
-		}
-
-		if o := listVal.Filter("env"); len(o.Items) > 0 {
-			if err := parseEnvs(c.Env, o); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 func validateConfig(cfg *Config) error {

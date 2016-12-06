@@ -43,17 +43,20 @@ func TestParse(t *testing.T) {
 				StepOrder: []string{"echo_hello_world", "echo", "scriptfile", "cat"},
 				Steps: map[string]Step{
 					"echo_hello_world": Command{
+						name:    "echo_hello_world",
 						Command: "echo",
 						Args:    []string{"hello world"},
 						Env:     map[string]string{},
 					},
 					"echo": Command{
+						name:    "echo",
 						Command: "echo",
 						Args:    []string{"moo >> cow.txt"},
 						Skip:    true,
 						Env:     map[string]string{},
 					},
 					"cat": Command{
+						name:    "cat",
 						Command: "cat",
 						Args:    []string{"cow.txt"},
 						Env: map[string]string{
@@ -61,6 +64,7 @@ func TestParse(t *testing.T) {
 						},
 					},
 					"scriptfile": Script{
+						name: "scriptfile",
 						Body: "echo 1",
 						Env: map[string]string{
 							"env": "test",
