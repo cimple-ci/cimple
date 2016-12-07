@@ -1,148 +1,40 @@
 package build
 
 import (
-	"bytes"
 	"errors"
-	"io"
-	"io/ioutil"
 	"log"
-	exec "os/exec"
-	"text/template"
+	"reflect"
 	"time"
 
 	"fmt"
 	"github.com/lukesmith/cimple/env"
-	"github.com/lukesmith/cimple/journal"
 	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/project"
-	"github.com/lukesmith/cimple/vcs"
 	"os"
 )
 
-type StepVars struct {
-	Cimple     *env.CimpleEnvironment
-	buildDate  time.Time
-	Project    project.Project
-	Vcs        vcs.VcsInformation
-	TaskName   string
-	WorkingDir string
-	HostEnv    map[string]string
-	StepEnv    map[string]string
-}
-
-func (sv *StepVars) BuildDate() string {
-	return sv.buildDate.Format(time.RFC3339)
-}
-
-func (sv *StepVars) Map() map[string]string {
-	m := make(map[string]string)
-	m = merge(m, sv.HostEnv)
-
-	m["CIMPLE_BUILD_DATE"] = sv.BuildDate()
-	m["CIMPLE_VERSION"] = sv.Cimple.Version
-	m["CIMPLE_PROJECT_NAME"] = sv.Project.Name
-	m["CIMPLE_PROJECT_VERSION"] = sv.Project.Version
-	m["CIMPLE_TASK_NAME"] = sv.TaskName
-	m["CIMPLE_WORKING_DIR"] = sv.WorkingDir
-	m["CIMPLE_VCS"] = sv.Vcs.Vcs
-	m["CIMPLE_VCS_BRANCH"] = sv.Vcs.Branch
-	m["CIMPLE_VCS_REVISION"] = sv.Vcs.Revision
-	m["CIMPLE_VCS_REMOTE_URL"] = sv.Vcs.RemoteUrl
-	m["CIMPLE_VCS_REMOTE_NAME"] = sv.Vcs.RemoteName
-
-	m = merge(m, sv.StepEnv)
-
-	return m
-}
-
 type StepContext struct {
 	Id     string
-	Env    *StepVars
+	Env    *project.StepVars
 	Cmd    string
-	Args   []string
 	logger *log.Logger
+	Step   project.Step
 }
 
 func newStepContext(stepId string, taskEnvs map[string]string, stepConfig project.Step) *StepContext {
 	stepContext := new(StepContext)
 	stepContext.Id = stepId
-	stepContext.Env = new(StepVars)
+	stepContext.Env = new(project.StepVars)
 
 	wd, _ := os.Getwd()
-	stepContext.Env.buildDate = time.Now()
+	stepContext.Env.BuildDate = time.Now()
 	stepContext.Env.WorkingDir = wd
 	stepContext.Env.Cimple = env.Cimple()
 	stepContext.Env.StepEnv = merge(taskEnvs, stepConfig.GetEnv())
 	stepContext.Env.HostEnv = env.EnvironmentVariables()
+	stepContext.Step = stepConfig
 
 	return stepContext
-}
-
-func (step *StepContext) templatedArgs() ([]string, error) {
-	args := []string{}
-	for _, v := range step.Args {
-		tmpl, err := template.New("t").Parse(v)
-		if err != nil {
-			return nil, err
-		}
-		var doc bytes.Buffer
-		tmpl.Execute(&doc, step.Env)
-		args = append(args, doc.String())
-	}
-
-	return args, nil
-}
-
-func (step *StepContext) templatedEnvs() (map[string]string, error) {
-	env := make(map[string]string)
-
-	for k, v := range step.Env.Map() {
-		tmpl, err := template.New("t").Parse(v)
-		if err != nil {
-			return nil, err
-		}
-		var doc bytes.Buffer
-		tmpl.Execute(&doc, step.Env)
-		env[k] = doc.String()
-	}
-
-	return env, nil
-}
-
-func (step *StepContext) execute(journal journal.Journal, stdout io.Writer, stderr io.Writer) error {
-	args, err := step.templatedArgs()
-	if err != nil {
-		return err
-	}
-
-	var cmd = exec.Command(step.Cmd, args...)
-
-	// Clear out env for command so not to inherit current process's environment.
-	cmd.Env = []string{}
-
-	env, err := step.templatedEnvs()
-	if err != nil {
-		return err
-	}
-
-	for k, v := range env {
-		cmd.Env = append(cmd.Env, k+"="+v)
-	}
-
-	journal.Record(stepStarted{Id: step.Id, Env: env, Step: step.Cmd, Args: args})
-
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
-
-	err = cmd.Run()
-	if err != nil {
-		journal.Record(stepFailed{Id: step.Id})
-		return err
-	}
-
-	journal.Record(stepSuccessful{Id: step.Id})
-
-	return nil
 }
 
 type BuildTask struct {
@@ -261,12 +153,17 @@ func (build *Build) runTask(task *BuildTask) error {
 
 	build.config.journal.Record(taskStarted{Id: task.Name, Steps: stepIds})
 
-	for _, step := range task.Steps {
-		err := step.execute(build.config.journal, build.config.logWriter, build.config.logWriter)
+	for _, stepContext := range task.Steps {
+		stepType := reflect.TypeOf(stepContext.Step).Name()
+		build.config.journal.Record(stepStarted{Id: stepContext.Id, Env: stepContext.Env, StepType: stepType, Step: stepContext.Step})
+		err := stepContext.Step.Execute(*stepContext.Env, build.config.logWriter, build.config.logWriter)
 		if err != nil {
+			build.config.journal.Record(stepFailed{Id: stepContext.Id})
 			build.config.journal.Record(taskFailed{Id: task.Name})
 			return err
 		}
+
+		build.config.journal.Record(stepSuccessful{Id: stepContext.Id})
 	}
 
 	build.config.journal.Record(taskSuccessful{Id: task.Name})
@@ -298,29 +195,6 @@ func buildStepContexts(logger *log.Logger, config *BuildConfig, task *project.Ta
 		stepContext.Env.TaskName = task.Name
 		stepContext.Env.Project = config.project
 		stepContext.Env.Vcs = config.repoInfo
-
-		command, ok := step.(project.Command)
-		if ok {
-			stepContext.Cmd = command.Command
-			stepContext.Args = command.Args
-		}
-
-		script, ok := step.(project.Script)
-		if ok {
-			f, _ := ioutil.TempFile(os.TempDir(), "step")
-
-			tmpl, err := template.New("t").Parse(script.Body)
-			if err != nil {
-				return nil, err
-			}
-			var doc bytes.Buffer
-			tmpl.Execute(&doc, stepContext.Env)
-			f.WriteString(doc.String())
-			f.Close()
-
-			stepContext.Cmd = "/bin/sh"
-			stepContext.Args = []string{f.Name()}
-		}
 
 		contexts = append(contexts, *stepContext)
 	}

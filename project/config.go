@@ -2,14 +2,18 @@ package project
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
+	"github.com/lukesmith/cimple/env"
+	"github.com/lukesmith/cimple/vcs"
 	"github.com/mitchellh/mapstructure"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type StepParser interface {
@@ -37,10 +41,43 @@ func (t Task) GetDependencies() []string {
 	return t.Depends
 }
 
+type StepVars struct {
+	Cimple     *env.CimpleEnvironment
+	BuildDate  time.Time
+	Project    Project
+	Vcs        vcs.VcsInformation
+	TaskName   string
+	WorkingDir string
+	HostEnv    map[string]string
+	StepEnv    map[string]string
+}
+
+func (sv *StepVars) Map() map[string]string {
+	m := make(map[string]string)
+	m = merge(m, sv.HostEnv)
+
+	m["CIMPLE_BUILD_DATE"] = sv.BuildDate.Format(time.RFC3339)
+	m["CIMPLE_VERSION"] = sv.Cimple.Version
+	m["CIMPLE_PROJECT_NAME"] = sv.Project.Name
+	m["CIMPLE_PROJECT_VERSION"] = sv.Project.Version
+	m["CIMPLE_TASK_NAME"] = sv.TaskName
+	m["CIMPLE_WORKING_DIR"] = sv.WorkingDir
+	m["CIMPLE_VCS"] = sv.Vcs.Vcs
+	m["CIMPLE_VCS_BRANCH"] = sv.Vcs.Branch
+	m["CIMPLE_VCS_REVISION"] = sv.Vcs.Revision
+	m["CIMPLE_VCS_REMOTE_URL"] = sv.Vcs.RemoteUrl
+	m["CIMPLE_VCS_REMOTE_NAME"] = sv.Vcs.RemoteName
+
+	m = merge(m, sv.StepEnv)
+
+	return m
+}
+
 type Step interface {
 	GetSkip() bool
 	GetName() string
 	GetEnv() map[string]string
+	Execute(vars StepVars, stdout io.Writer, stderr io.Writer) error
 }
 
 type Config struct {
@@ -281,4 +318,18 @@ func count(s []string, e string) int {
 		}
 	}
 	return occurrences
+}
+
+func merge(a map[string]string, b map[string]string) map[string]string {
+	c := make(map[string]string)
+
+	for k, v := range a {
+		c[k] = v
+	}
+
+	for k, v := range b {
+		c[k] = v
+	}
+
+	return c
 }
