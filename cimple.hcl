@@ -88,6 +88,7 @@ SCRIPT
       package = "cimple"
       username = "lukesmith"
     }
-    file = "output/downloads/{{index .Project.Version}}/cimple_{{index .Project.Version}}_linux_386.tar.gz"
+    files = [
+      "output/downloads/{{index .Project.Version}}-{{index .Vcs.Branch}}/cimple_{{index .Project.Version}}*.*"]
   }
 }

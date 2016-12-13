@@ -1,5 +1,5 @@
-hash: a73e8acbf9ac0e7fb5dab47183f2dcc8cd62caa85f1b95ebdd16b475d0bc245a
-updated: 2016-11-11T21:41:02.478379437Z
+hash: 9977df0135a8e95783a03daf074a05a2e773a533873c201f6fd17e951897064e
+updated: 2016-12-13T21:22:58.980306148Z
 imports:
 - name: github.com/cimple-ci/cimple-go-api
   version: c24faf776385e5df062115bb536dd85fe246188b
@@ -16,7 +16,7 @@ imports:
 - name: github.com/gyuho/goraph
   version: 85118305aa83e5fded7edb3c7309894fc2bb9417
 - name: github.com/hashicorp/hcl
-  version: 5af5025c48e8bf0e03551b8757d92a774b9f0694
+  version: 37ab263305aaeb501a60eb16863e808d426e37f2
   subpackages:
   - hcl/ast
   - hcl/parser

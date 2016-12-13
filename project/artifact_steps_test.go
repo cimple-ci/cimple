@@ -13,7 +13,7 @@ func TestArtifactParser_NoDestination(t *testing.T) {
 
 	artifactHcl := `
 artifact example {
-	file = "/path/to/files"
+	files = ["/path/to/files"]
 	skip = true
 	env {
 		VAL = "1"
@@ -29,7 +29,7 @@ artifact example {
 		artifact := step.(ArtifactStep)
 		assert.Equal("example", artifact.GetName())
 		assert.True(artifact.GetSkip())
-		assert.Equal("/path/to/files", artifact.File)
+		assert.Equal([]string{"/path/to/files"}, artifact.Files)
 		assert.Equal(1, len(artifact.GetEnv()))
 		assert.Equal("1", artifact.GetEnv()["VAL"])
 
@@ -47,7 +47,7 @@ artifact example {
 		repository = "my-repo"
 		package = "my-package"
 	}
-	file = "/path/to/files"
+	files = ["/path/to/files"]
 }
 `
 	ast, err := extractObject(artifactHcl)
@@ -57,7 +57,7 @@ artifact example {
 		assert.Nil(err)
 
 		artifact := step.(ArtifactStep)
-		assert.Equal("/path/to/files", artifact.File)
+		assert.Equal([]string{"/path/to/files"}, artifact.Files)
 		assert.Equal(1, len(artifact.Destinations))
 
 		destination := artifact.Destinations[0].(*bintrayArtifactDestination)
@@ -82,7 +82,7 @@ artifact example {
 		repository = "my-other-repo"
 		package = "my-other-package"
 	}
-	file = "/path/to/files"
+	files = ["/path/to/files"]
 }
 `
 	ast, err := extractObject(artifactHcl)

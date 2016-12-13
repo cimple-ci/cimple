@@ -81,7 +81,7 @@ func parseDestination(item *ast.ObjectItem) (artifactDestination, error) {
 
 type ArtifactStep struct {
 	name         string
-	File         string
+	Files        []string
 	Skip         bool
 	Destinations []artifactDestination
 	env          map[string]string
@@ -100,8 +100,19 @@ func (c ArtifactStep) GetEnv() map[string]string {
 }
 
 func (c ArtifactStep) Execute(vars StepVars, stdout io.Writer, stderr io.Writer) error {
-	files := []string{c.File}
 	for _, destination := range c.Destinations {
+		files := []string{}
+		for _, f := range c.Files {
+			path, err := templateString(f, vars)
+			if err != nil {
+				return err
+			}
+			matches, err := filepath.Glob(path)
+			if err != nil {
+				return err
+			}
+			files = append(files, matches...)
+		}
 		err := destination.Execute(files, vars, stdout, stderr)
 		if err != nil {
 			return err
@@ -142,11 +153,7 @@ func (b bintrayArtifactDestination) Execute(files []string, vars StepVars, stdou
 	}
 
 	for _, f := range files {
-		filePath, err := templateString(f, vars)
-		if err != nil {
-			return err
-		}
-		filePath, err = filepath.Abs(filePath)
+		filePath, err := filepath.Abs(f)
 		if err != nil {
 			return err
 		}
