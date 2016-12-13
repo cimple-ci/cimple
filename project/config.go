@@ -2,15 +2,28 @@ package project
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
+	"github.com/lukesmith/cimple/env"
+	"github.com/lukesmith/cimple/vcs"
 	"github.com/mitchellh/mapstructure"
 	"regexp"
 	"strings"
+	"time"
 )
+
+type SecretStore interface {
+	Get(t string, k string) (string, error)
+}
+
+type StepParser interface {
+	GetToken() string
+	Parse(*ast.ObjectItem) (Step, error)
+}
 
 type Task struct {
 	Description string
@@ -32,38 +45,48 @@ func (t Task) GetDependencies() []string {
 	return t.Depends
 }
 
+type StepVars struct {
+	Cimple     *env.CimpleEnvironment
+	BuildDate  time.Time
+	Project    Project
+	Vcs        vcs.VcsInformation
+	TaskName   string
+	WorkingDir string
+	HostEnv    map[string]string
+	StepEnv    map[string]string
+	Secrets    SecretStore
+}
+
+func (sv StepVars) FormattedBuildDate() string {
+	return sv.BuildDate.Format(time.RFC3339)
+}
+
+func (sv *StepVars) Map() map[string]string {
+	m := make(map[string]string)
+	m = merge(m, sv.HostEnv)
+
+	m["CIMPLE_BUILD_DATE"] = sv.BuildDate.Format(time.RFC3339)
+	m["CIMPLE_VERSION"] = sv.Cimple.Version
+	m["CIMPLE_PROJECT_NAME"] = sv.Project.Name
+	m["CIMPLE_PROJECT_VERSION"] = sv.Project.Version
+	m["CIMPLE_TASK_NAME"] = sv.TaskName
+	m["CIMPLE_WORKING_DIR"] = sv.WorkingDir
+	m["CIMPLE_VCS"] = sv.Vcs.Vcs
+	m["CIMPLE_VCS_BRANCH"] = sv.Vcs.Branch
+	m["CIMPLE_VCS_REVISION"] = sv.Vcs.Revision
+	m["CIMPLE_VCS_REMOTE_URL"] = sv.Vcs.RemoteUrl
+	m["CIMPLE_VCS_REMOTE_NAME"] = sv.Vcs.RemoteName
+
+	m = merge(m, sv.StepEnv)
+
+	return m
+}
+
 type Step interface {
 	GetSkip() bool
+	GetName() string
 	GetEnv() map[string]string
-}
-
-type Script struct {
-	Skip bool
-	Body string
-	Env  map[string]string
-}
-
-func (s Script) GetSkip() bool {
-	return s.Skip
-}
-
-func (s Script) GetEnv() map[string]string {
-	return s.Env
-}
-
-type Command struct {
-	Command string
-	Args    []string
-	Env     map[string]string
-	Skip    bool
-}
-
-func (c Command) GetSkip() bool {
-	return c.Skip
-}
-
-func (c Command) GetEnv() map[string]string {
-	return c.Env
+	Execute(vars StepVars, stdout io.Writer, stderr io.Writer) error
 }
 
 type Config struct {
@@ -154,10 +177,8 @@ func parseConfig(obj *ast.File) (*Config, error) {
 		}
 	}
 
-	if o := list.Filter("env"); len(o.Items) > 0 {
-		if err := parseEnvs(result.Project.Env, o); err != nil {
-			return nil, err
-		}
+	if err := parseEnvs(result.Project.Env, list.Filter("env")); err != nil {
+		return nil, err
 	}
 
 	return &result, nil
@@ -192,28 +213,39 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 		listVal = ot.List
 	}
 
+	stepParsers := []StepParser{&ScriptStepParser{}, &CommandStepParser{}, &ArtifactParser{}}
+
 	so, err := stepOrder(listVal)
 	if err != nil {
 		return err
 	}
 	task.StepOrder = so
 
-	if o := listVal.Filter("command"); len(o.Items) > 0 {
-		if err := parseCommands(task.Steps, o); err != nil {
-			return err
+	for _, sp := range stepParsers {
+		if o := listVal.Filter(sp.GetToken()); len(o.Items) > 0 {
+			steps := make([]Step, 0)
+
+			for _, item := range o.Items {
+				step, err := sp.Parse(item)
+				if err != nil {
+					return err
+				}
+				steps = append(steps, step)
+			}
+
+			for _, st := range steps {
+				if _, exists := task.Steps[st.GetName()]; exists {
+					return &ConfigError{
+						Issues: []string{fmt.Sprintf("A step named %s exists multiple times", st.GetName())},
+					}
+				}
+				task.Steps[st.GetName()] = st
+			}
 		}
 	}
 
-	if o := listVal.Filter("script"); len(o.Items) > 0 {
-		if err := parseScripts(task.Steps, o); err != nil {
-			return err
-		}
-	}
-
-	if o := listVal.Filter("env"); len(o.Items) > 0 {
-		if err := parseEnvs(task.Env, o); err != nil {
-			return err
-		}
+	if err := parseEnvs(task.Env, listVal.Filter("env")); err != nil {
+		return err
 	}
 
 	_, exists := tasks[task.Name]
@@ -235,87 +267,14 @@ func stepOrder(o *ast.ObjectList) ([]string, error) {
 		for _, keyItem := range item.Keys {
 			key := keyItem.Token.Value().(string)
 
-			if key == "command" || key == "script" {
+			if key == "command" || key == "script" || key == "artifact" {
 				n := item.Keys[1].Token.Value().(string)
 				result = append(result, n)
-
-				if count(result, n) > 1 {
-					return nil, &ConfigError{
-						Issues: []string{fmt.Sprintf("A step named %s exists multiple times", n)},
-					}
-				}
 			}
 		}
 	}
 
 	return result, nil
-}
-
-func parseCommands(steps map[string]Step, list *ast.ObjectList) error {
-	for _, item := range list.Items {
-		var m map[string]interface{}
-		if err := hcl.DecodeObject(&m, item.Val); err != nil {
-			return err
-		}
-
-		delete(m, "env")
-
-		name := item.Keys[0].Token.Value().(string)
-		var c Command
-		c.Env = make(map[string]string)
-		if err := mapstructure.WeakDecode(m, &c); err != nil {
-			log.Fatal(err)
-			return err
-		}
-
-		steps[name] = c
-
-		var listVal *ast.ObjectList
-		if ot, ok := item.Val.(*ast.ObjectType); ok {
-			listVal = ot.List
-		}
-
-		if o := listVal.Filter("env"); len(o.Items) > 0 {
-			if err := parseEnvs(c.Env, o); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func parseScripts(result map[string]Step, list *ast.ObjectList) error {
-	for _, item := range list.Items {
-		var m map[string]interface{}
-		if err := hcl.DecodeObject(&m, item.Val); err != nil {
-			return err
-		}
-
-		delete(m, "env")
-
-		name := item.Keys[0].Token.Value().(string)
-		var c Script
-		c.Env = make(map[string]string)
-		if err := mapstructure.WeakDecode(m, &c); err != nil {
-			log.Fatal(err)
-			return err
-		}
-		result[name] = c
-
-		var listVal *ast.ObjectList
-		if ot, ok := item.Val.(*ast.ObjectType); ok {
-			listVal = ot.List
-		}
-
-		if o := listVal.Filter("env"); len(o.Items) > 0 {
-			if err := parseEnvs(c.Env, o); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 func validateConfig(cfg *Config) error {
@@ -369,4 +328,18 @@ func count(s []string, e string) int {
 		}
 	}
 	return occurrences
+}
+
+func merge(a map[string]string, b map[string]string) map[string]string {
+	c := make(map[string]string)
+
+	for k, v := range a {
+		c[k] = v
+	}
+
+	for k, v := range b {
+		c[k] = v
+	}
+
+	return c
 }

@@ -33,7 +33,7 @@ func Config() cli.Command {
 			configFile := c.String("configuration")
 			cfg, err := project.LoadConfig(configFile)
 			if err != nil {
-				return cli.NewExitError(fmt.Sprintf("Unable to load configuration file - %s", configFile), CONFIGURATION_ERROR_CODE)
+				return cli.NewExitError(fmt.Sprintf("Unable to load configuration file - %s - %s", configFile, err), CONFIGURATION_ERROR_CODE)
 			}
 
 			if c.String("format") == "graphviz" {
