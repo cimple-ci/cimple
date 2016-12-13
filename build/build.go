@@ -195,6 +195,7 @@ func buildStepContexts(logger *log.Logger, config *BuildConfig, task *project.Ta
 		stepContext.Env.TaskName = task.Name
 		stepContext.Env.Project = config.project
 		stepContext.Env.Vcs = config.repoInfo
+		stepContext.Env.Secrets = config.Secrets
 
 		contexts = append(contexts, *stepContext)
 	}

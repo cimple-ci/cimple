@@ -10,6 +10,7 @@ import (
 type BuildConfig struct {
 	BuildId       string
 	ExplicitTasks []string
+	Secrets       project.SecretStore
 	RunContext    string
 	logWriter     io.Writer
 	journal       journal.Journal

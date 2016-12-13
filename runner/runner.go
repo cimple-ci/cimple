@@ -18,6 +18,7 @@ import (
 type RunOptions struct {
 	Journal *JournalSettings
 	Context string
+	Secrets project.SecretStore
 }
 
 type JournalSettings struct {
@@ -25,19 +26,19 @@ type JournalSettings struct {
 	Format string
 }
 
-func Run(options *RunOptions, explicitTasks []string) {
+func Run(options *RunOptions, explicitTasks []string) error {
 	buildId := buildId()
 
 	cfg, err := loadConfig()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	projectName := cfg.Project.Name
 
 	fileWriter, err := createOutputPathWriter(projectName, buildId)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer fileWriter.Close()
 
@@ -65,11 +66,14 @@ func Run(options *RunOptions, explicitTasks []string) {
 	buildConfig := build.NewBuildConfig(buildId, logWriter, journal, cfg, *r)
 	buildConfig.ExplicitTasks = explicitTasks
 	buildConfig.RunContext = options.Context
+	buildConfig.Secrets = options.Secrets
 
 	err = executeBuild(buildConfig)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	return nil
 }
 
 var loadRepositoryInfo = func() *vcs.VcsInformation {

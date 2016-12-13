@@ -49,7 +49,7 @@ task package {
     command = "goxc"
     body = <<BODY
 goxc -build-ldflags \
-  "-X main.VERSION={{index .Project.Version}} -X main.BuildDate={{index .BuildDate}} -X main.Revision={{index .Vcs.Revision}}" \
+  "-X main.VERSION={{index .Project.Version}} -X main.BuildDate={{index .FormattedBuildDate}} -X main.Revision={{index .Vcs.Revision}}" \
   -pv {{index .Project.Version}} \
   -br {{index .Vcs.Branch}} \
 BODY
@@ -79,5 +79,15 @@ task publish {
 # docker push cimpleci/cimple:{{index .Project.Version}}
 echo pushing
 SCRIPT
+  }
+
+  artifact "publish-binaries" {
+    destination bintray {
+      subject = "lukesmith"
+      repository = "cimple"
+      package = "cimple"
+      username = "lukesmith"
+    }
+    file = "output/downloads/{{index .Project.Version}}/cimple_{{index .Project.Version}}_linux_386.tar.gz"
   }
 }

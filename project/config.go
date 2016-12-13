@@ -16,9 +16,13 @@ import (
 	"time"
 )
 
+type SecretStore interface {
+	Get(t string, k string) (string, error)
+}
+
 type StepParser interface {
 	GetToken() string
-	Parse(list *ast.ObjectList) ([]Step, error)
+	Parse(*ast.ObjectItem) (Step, error)
 }
 
 type Task struct {
@@ -50,6 +54,11 @@ type StepVars struct {
 	WorkingDir string
 	HostEnv    map[string]string
 	StepEnv    map[string]string
+	Secrets    SecretStore
+}
+
+func (sv StepVars) FormattedBuildDate() string {
+	return sv.BuildDate.Format(time.RFC3339)
 }
 
 func (sv *StepVars) Map() map[string]string {
@@ -168,10 +177,8 @@ func parseConfig(obj *ast.File) (*Config, error) {
 		}
 	}
 
-	if o := list.Filter("env"); len(o.Items) > 0 {
-		if err := parseEnvs(result.Project.Env, o); err != nil {
-			return nil, err
-		}
+	if err := parseEnvs(result.Project.Env, list.Filter("env")); err != nil {
+		return nil, err
 	}
 
 	return &result, nil
@@ -206,7 +213,7 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 		listVal = ot.List
 	}
 
-	stepParsers := []StepParser{&ScriptStepParser{}, &CommandStepParser{}}
+	stepParsers := []StepParser{&ScriptStepParser{}, &CommandStepParser{}, &ArtifactParser{}}
 
 	so, err := stepOrder(listVal)
 	if err != nil {
@@ -216,9 +223,14 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 
 	for _, sp := range stepParsers {
 		if o := listVal.Filter(sp.GetToken()); len(o.Items) > 0 {
-			steps, err := sp.Parse(o)
-			if err != nil {
-				return err
+			steps := make([]Step, 0)
+
+			for _, item := range o.Items {
+				step, err := sp.Parse(item)
+				if err != nil {
+					return err
+				}
+				steps = append(steps, step)
 			}
 
 			for _, st := range steps {
@@ -232,10 +244,8 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 		}
 	}
 
-	if o := listVal.Filter("env"); len(o.Items) > 0 {
-		if err := parseEnvs(task.Env, o); err != nil {
-			return err
-		}
+	if err := parseEnvs(task.Env, listVal.Filter("env")); err != nil {
+		return err
 	}
 
 	_, exists := tasks[task.Name]
@@ -257,7 +267,7 @@ func stepOrder(o *ast.ObjectList) ([]string, error) {
 		for _, keyItem := range item.Keys {
 			key := keyItem.Token.Value().(string)
 
-			if key == "command" || key == "script" {
+			if key == "command" || key == "script" || key == "artifact" {
 				n := item.Keys[1].Token.Value().(string)
 				result = append(result, n)
 			}
