@@ -81,14 +81,26 @@ echo pushing
 SCRIPT
   }
 
-  artifact "publish-binaries" {
+  publish binaries {
     destination bintray {
-      subject = "lukesmith"
-      repository = "cimple"
+      subject = "cimple"
+      repository = "pkgs"
       package = "cimple"
       username = "lukesmith"
     }
     files = [
-      "output/downloads/{{index .Project.Version}}-{{index .Vcs.Branch}}/cimple_{{index .Project.Version}}*.*"]
+      "output/downloads/{{index .Project.Version}}-{{index .Vcs.Branch}}/cimple_{{index .Project.Version}}*.tar.gz",
+      "output/downloads/{{index .Project.Version}}-{{index .Vcs.Branch}}/cimple_{{index .Project.Version}}*.zip"
+    ]
+  }
+
+  publish deb-packages {
+    destination bintray {
+      subject = "cimple"
+      repository = "debian"
+      package = "cimple"
+      username = "lukesmith"
+    }
+    files = ["output/downloads/{{index .Project.Version}}-{{index .Vcs.Branch}}/cimple_{{index .Project.Version}}*.deb"]
   }
 }

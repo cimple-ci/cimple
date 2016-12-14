@@ -8,11 +8,11 @@ import (
 	"testing"
 )
 
-func TestArtifactParser_NoDestination(t *testing.T) {
+func TestPublishParser_NoDestination(t *testing.T) {
 	assert := assert.New(t)
 
-	artifactHcl := `
-artifact example {
+	publishHcl := `
+publish example {
 	files = ["/path/to/files"]
 	skip = true
 	env {
@@ -20,28 +20,28 @@ artifact example {
 	}
 }
 `
-	ast, err := extractObject(artifactHcl)
+	ast, err := extractObject(publishHcl)
 	if assert.Nil(err) {
-		parser := &ArtifactParser{}
+		parser := &PublishParser{}
 		step, err := parser.Parse(ast)
 		assert.Nil(err)
 
-		artifact := step.(ArtifactStep)
-		assert.Equal("example", artifact.GetName())
-		assert.True(artifact.GetSkip())
-		assert.Equal([]string{"/path/to/files"}, artifact.Files)
-		assert.Equal(1, len(artifact.GetEnv()))
-		assert.Equal("1", artifact.GetEnv()["VAL"])
+		publishStep := step.(PublishStep)
+		assert.Equal("example", publishStep.GetName())
+		assert.True(publishStep.GetSkip())
+		assert.Equal([]string{"/path/to/files"}, publishStep.Files)
+		assert.Equal(1, len(publishStep.GetEnv()))
+		assert.Equal("1", publishStep.GetEnv()["VAL"])
 
-		assert.Empty(artifact.Destinations)
+		assert.Empty(publishStep.Destinations)
 	}
 }
 
-func TestArtifactParser_BintrayDestination(t *testing.T) {
+func TestPublishParser_BintrayDestination(t *testing.T) {
 	assert := assert.New(t)
 
-	artifactHcl := `
-artifact example {
+	publishHcl := `
+publish example {
 	destination bintray {
 		subject = "my-subject"
 		repository = "my-repo"
@@ -50,28 +50,28 @@ artifact example {
 	files = ["/path/to/files"]
 }
 `
-	ast, err := extractObject(artifactHcl)
+	ast, err := extractObject(publishHcl)
 	if assert.Nil(err) {
-		parser := &ArtifactParser{}
+		parser := &PublishParser{}
 		step, err := parser.Parse(ast)
 		assert.Nil(err)
 
-		artifact := step.(ArtifactStep)
-		assert.Equal([]string{"/path/to/files"}, artifact.Files)
-		assert.Equal(1, len(artifact.Destinations))
+		publishStep := step.(PublishStep)
+		assert.Equal([]string{"/path/to/files"}, publishStep.Files)
+		assert.Equal(1, len(publishStep.Destinations))
 
-		destination := artifact.Destinations[0].(*bintrayArtifactDestination)
+		destination := publishStep.Destinations[0].(*bintrayPublishDestination)
 		assert.Equal("my-subject", destination.Subject)
 		assert.Equal("my-repo", destination.Repository)
 		assert.Equal("my-package", destination.Package)
 	}
 }
 
-func TestArtifactParser_MultipleDestinations(t *testing.T) {
+func TestPublishParser_MultipleDestinations(t *testing.T) {
 	assert := assert.New(t)
 
-	artifactHcl := `
-artifact example {
+	publishHcl := `
+publish example {
 	destination bintray {
 		subject = "my-subject"
 		repository = "my-repo"
@@ -85,14 +85,14 @@ artifact example {
 	files = ["/path/to/files"]
 }
 `
-	ast, err := extractObject(artifactHcl)
+	ast, err := extractObject(publishHcl)
 	if assert.Nil(err) {
-		parser := &ArtifactParser{}
+		parser := &PublishParser{}
 		step, err := parser.Parse(ast)
 		assert.Nil(err)
 
-		artifact := step.(ArtifactStep)
-		assert.Equal(2, len(artifact.Destinations))
+		publishStep := step.(PublishStep)
+		assert.Equal(2, len(publishStep.Destinations))
 	}
 }
 
@@ -107,7 +107,7 @@ func extractObject(h string) (*ast.ObjectItem, error) {
 		return nil, fmt.Errorf("Failed to turn node into ObjectList")
 	}
 
-	matches := list.Filter("artifact")
+	matches := list.Filter("publish")
 
 	return matches.Items[0], nil
 }

@@ -15,18 +15,18 @@ import (
 	"text/template"
 )
 
-type artifactDestination interface {
+type publishDestination interface {
 	Execute(files []string, vars StepVars, stdout io.Writer, stderr io.Writer) error
 }
 
-type ArtifactParser struct {
+type PublishParser struct {
 }
 
-func (p ArtifactParser) GetToken() string {
-	return "artifact"
+func (p PublishParser) GetToken() string {
+	return "publish"
 }
 
-func (p ArtifactParser) Parse(item *ast.ObjectItem) (Step, error) {
+func (p PublishParser) Parse(item *ast.ObjectItem) (Step, error) {
 	var m map[string]interface{}
 	if err := hcl.DecodeObject(&m, item.Val); err != nil {
 		return nil, err
@@ -34,10 +34,10 @@ func (p ArtifactParser) Parse(item *ast.ObjectItem) (Step, error) {
 
 	name := item.Keys[0].Token.Value().(string)
 
-	var c ArtifactStep
+	var c PublishStep
 	c.name = name
 	c.env = make(map[string]string)
-	c.Destinations = make([]artifactDestination, 0)
+	c.Destinations = make([]publishDestination, 0)
 
 	a := item.Val.(*ast.ObjectType).List
 	destinations := a.Filter("destination")
@@ -63,13 +63,13 @@ func (p ArtifactParser) Parse(item *ast.ObjectItem) (Step, error) {
 	return c, nil
 }
 
-func parseDestination(item *ast.ObjectItem) (artifactDestination, error) {
+func parseDestination(item *ast.ObjectItem) (publishDestination, error) {
 	var m map[string]interface{}
 	if err := hcl.DecodeObject(&m, item.Val); err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
-	destination := &bintrayArtifactDestination{}
+	destination := &bintrayPublishDestination{}
 
 	if err := mapstructure.WeakDecode(m, &destination); err != nil {
 		log.Fatal(err)
@@ -79,27 +79,27 @@ func parseDestination(item *ast.ObjectItem) (artifactDestination, error) {
 	return destination, nil
 }
 
-type ArtifactStep struct {
+type PublishStep struct {
 	name         string
 	Files        []string
 	Skip         bool
-	Destinations []artifactDestination
+	Destinations []publishDestination
 	env          map[string]string
 }
 
-func (c ArtifactStep) GetName() string {
+func (c PublishStep) GetName() string {
 	return c.name
 }
 
-func (c ArtifactStep) GetSkip() bool {
+func (c PublishStep) GetSkip() bool {
 	return c.Skip
 }
 
-func (c ArtifactStep) GetEnv() map[string]string {
+func (c PublishStep) GetEnv() map[string]string {
 	return c.env
 }
 
-func (c ArtifactStep) Execute(vars StepVars, stdout io.Writer, stderr io.Writer) error {
+func (c PublishStep) Execute(vars StepVars, stdout io.Writer, stderr io.Writer) error {
 	for _, destination := range c.Destinations {
 		files := []string{}
 		for _, f := range c.Files {
@@ -134,14 +134,14 @@ func templateString(s string, vars StepVars) (string, error) {
 	return res, nil
 }
 
-type bintrayArtifactDestination struct {
+type bintrayPublishDestination struct {
 	Subject    string
 	Repository string
 	Package    string
 	Username   string
 }
 
-func (b bintrayArtifactDestination) Execute(files []string, vars StepVars, stdout io.Writer, stderr io.Writer) error {
+func (b bintrayPublishDestination) Execute(files []string, vars StepVars, stdout io.Writer, stderr io.Writer) error {
 	subject := b.Subject
 	repository := b.Repository
 	version := vars.Project.Version

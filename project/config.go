@@ -213,7 +213,7 @@ func parseTask(tasks map[string]*Task, item *ast.ObjectItem) error {
 		listVal = ot.List
 	}
 
-	stepParsers := []StepParser{&ScriptStepParser{}, &CommandStepParser{}, &ArtifactParser{}}
+	stepParsers := []StepParser{&ScriptStepParser{}, &CommandStepParser{}, &PublishParser{}}
 
 	so, err := stepOrder(listVal)
 	if err != nil {
