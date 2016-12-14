@@ -4,7 +4,7 @@ cimple {
 
 name = "Cimple"
 description = "Cimple CI build tasks"
-version = "0.0.2-alpha"
+version = "0.0.2"
 
 env {
   GOPATH = "{{index .HostEnv \"GOPATH\"}}"
@@ -45,26 +45,40 @@ task package {
   description = "Packages Cimple for release"
   depends = ["test", "fix"]
 
+  command clean {
+    command = "rm"
+    args = ["-rf", "output"]
+  }
+
   script goxc {
-    command = "goxc"
     body = <<BODY
 goxc -build-ldflags \
   "-X main.VERSION={{index .Project.Version}} -X main.BuildDate={{index .FormattedBuildDate}} -X main.Revision={{index .Vcs.Revision}}" \
   -pv {{index .Project.Version}} \
-  -br {{index .Vcs.Branch}} \
+  {{ if ne (index .Vcs.Branch) "master" }}
+    -br {{index .Vcs.Branch}} \
+  {{ end }}
 BODY
   }
 
   script build-cimple-docker {
     body = <<SCRIPT
+{{ if ne (index .Vcs.Branch) "master" }}
 docker build --build-arg CIMPLE_VERSION={{index .Project.Version}}-{{index .Vcs.Branch}} -t cimple -f Dockerfile .
+{{ else }}
+docker build --build-arg CIMPLE_VERSION={{index .Project.Version}} -t cimple -f Dockerfile .
+{{ end }}
 SCRIPT
   }
 
   script tag-cimple-docker {
     body = <<SCRIPT
+{{ if ne (index .Vcs.Branch) "master" }}
+docker tag cimpleci/cimple:latest cimpleci/cimple:{{index .Project.Version}}-{{index .Vcs.Branch}}
+{{ else }}
 docker tag cimple cimpleci/cimple:latest
 docker tag cimpleci/cimple:latest cimpleci/cimple:{{index .Project.Version}}
+{{ end }}
 SCRIPT
   }
 }
@@ -75,9 +89,12 @@ task publish {
 
   script publish-cimple-docker {
     body = <<SCRIPT
-# docker push cimpleci/cimple:latest
-# docker push cimpleci/cimple:{{index .Project.Version}}
-echo pushing
+{{ if ne (index .Vcs.Branch) "master" }}
+docker push cimpleci/cimple:{{index .Project.Version}}-{{index .Vcs.Branch}}
+{{ else }}
+docker push cimpleci/cimple
+docker push cimpleci/cimple:{{index .Project.Version}}
+{{ end }}
 SCRIPT
   }
 
@@ -89,8 +106,8 @@ SCRIPT
       username = "lukesmith"
     }
     files = [
-      "output/downloads/{{index .Project.Version}}-{{index .Vcs.Branch}}/cimple_{{index .Project.Version}}*.tar.gz",
-      "output/downloads/{{index .Project.Version}}-{{index .Vcs.Branch}}/cimple_{{index .Project.Version}}*.zip"
+      "output/downloads/{{index .Project.Version}}*/cimple_{{index .Project.Version}}*.tar.gz",
+      "output/downloads/{{index .Project.Version}}*/cimple_{{index .Project.Version}}*.zip"
     ]
   }
 
@@ -101,6 +118,8 @@ SCRIPT
       package = "cimple"
       username = "lukesmith"
     }
-    files = ["output/downloads/{{index .Project.Version}}-{{index .Vcs.Branch}}/cimple_{{index .Project.Version}}*.deb"]
+    files = [
+      "output/downloads/{{index .Project.Version}}*/cimple_{{index .Project.Version}}*.deb"
+    ]
   }
 }
