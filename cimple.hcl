@@ -99,7 +99,7 @@ SCRIPT
 
   publish binaries {
     destination bintray {
-      subject = "cimple"
+      subject = "cimpleci"
       repository = "pkgs"
       package = "cimple"
       username = "lukesmith"
@@ -112,7 +112,7 @@ SCRIPT
 
   publish deb-packages {
     destination bintray {
-      subject = "cimple"
+      subject = "cimpleci"
       repository = "debian"
       package = "cimple"
       username = "lukesmith"
