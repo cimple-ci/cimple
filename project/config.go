@@ -267,7 +267,7 @@ func stepOrder(o *ast.ObjectList) ([]string, error) {
 		for _, keyItem := range item.Keys {
 			key := keyItem.Token.Value().(string)
 
-			if key == "command" || key == "script" || key == "artifact" {
+			if key == "command" || key == "script" || key == "publish" {
 				n := item.Keys[1].Token.Value().(string)
 				result = append(result, n)
 			}

@@ -91,7 +91,7 @@ task publish {
 {{ if ne (index .Vcs.Branch) "master" }}
 docker push cimpleci/cimple:{{index .Project.Version}}-$VERSION_LABEL
 {{ else }}
-docker push cimpleci/cimple
+docker push cimpleci/cimple:latest
 docker push cimpleci/cimple:{{index .Project.Version}}
 {{ end }}
 SCRIPT
