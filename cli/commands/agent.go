@@ -3,12 +3,15 @@ package cli
 import (
 	"log"
 
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/lukesmith/cimple/agent"
 	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/syslog"
 	"github.com/urfave/cli"
 	"io"
+	"io/ioutil"
 	"os"
 )
 
@@ -28,6 +31,18 @@ func Agent() cli.Command {
 				Usage: "The Cimple server port.",
 				Value: "8080",
 			},
+			cli.BoolFlag{
+				Name:  "no-tls",
+				Usage: "Disable TLS to connect to the server",
+			},
+			cli.BoolFlag{
+				Name:  "skip-tls-verification",
+				Usage: "Skip verification of the server TLS certificate",
+			},
+			cli.StringFlag{
+				Name:  "tls-ca-file",
+				Usage: "Specifies the path to the server CA certificate file",
+			},
 		},
 		Action: func(c *cli.Context) {
 			logging.SetDefaultLogger("Agent", os.Stdout)
@@ -35,6 +50,23 @@ func Agent() cli.Command {
 			agentConfig, err := agent.DefaultConfig()
 			agentConfig.ServerAddr = c.String("server-addr")
 			agentConfig.ServerPort = c.String("server-port")
+			agentConfig.EnableTLS = !c.Bool("no-tls")
+
+			CA_Pool := x509.NewCertPool()
+			caFile := c.String("tls-ca-file")
+			if len(caFile) != 0 {
+				caCert, err := ioutil.ReadFile(caFile)
+				if err != nil {
+					log.Fatal("Could not load CA certificate!")
+				}
+
+				CA_Pool.AppendCertsFromPEM(caCert)
+			}
+
+			agentConfig.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: c.Bool("skip-tls-verification"),
+				RootCAs:            CA_Pool,
+			}
 			agentConfig.SyslogUrl = fmt.Sprintf("%s:1514", agentConfig.ServerAddr)
 
 			syslogWriter, err := buildSyslogLogger(agentConfig)

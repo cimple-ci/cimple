@@ -1,12 +1,14 @@
 package agent
 
 import (
+	"crypto/tls"
 	"encoding/gob"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/lukesmith/cimple/messages"
 	"github.com/satori/go.uuid"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -17,22 +19,28 @@ type ServerConnection interface {
 }
 
 type serverConnection struct {
-	socket       *websocket.Conn
-	encoder      *gob.Encoder
-	decoder      *gob.Decoder
-	logger       *log.Logger
-	url          string
-	agentId      uuid.UUID
-	Connected    chan websocket.Conn
-	Disconnected chan websocket.Conn
+	socket          *websocket.Conn
+	encoder         *gob.Encoder
+	decoder         *gob.Decoder
+	logger          *log.Logger
+	url             string
+	agentId         uuid.UUID
+	Connected       chan websocket.Conn
+	Disconnected    chan websocket.Conn
+	TLSClientConfig *tls.Config
 }
 
-func newWebsocketServerConnection(addr string, port string, agentId uuid.UUID, logger *log.Logger) (*serverConnection, error) {
-	url := fmt.Sprintf("ws://%s:%s/agents/connection?id=%s", addr, port, agentId)
+func newWebsocketServerConnection(cfg *Config, agentId uuid.UUID, logger *log.Logger) (*serverConnection, error) {
+	scheme := "ws"
+	if cfg.EnableTLS {
+		scheme = "wss"
+	}
+	url := fmt.Sprintf("%s://%s:%s/agents/connection?id=%s", scheme, cfg.ServerAddr, cfg.ServerPort, agentId)
 
 	conn := &serverConnection{
-		logger: logger,
-		url:    url,
+		logger:          logger,
+		url:             url,
+		TLSClientConfig: cfg.TLSClientConfig,
 	}
 	conn.encoder = gob.NewEncoder(conn)
 	conn.decoder = gob.NewDecoder(conn)
@@ -74,7 +82,12 @@ func (a *serverConnection) Close() error {
 
 func (a *serverConnection) Connect() error {
 	a.logger.Print("Attempting to connect to server")
-	socket, _, err := websocket.DefaultDialer.Dial(a.url, nil)
+
+	dialer := &websocket.Dialer{
+		Proxy:           http.ProxyFromEnvironment,
+		TLSClientConfig: a.TLSClientConfig,
+	}
+	socket, _, err := dialer.Dial(a.url, nil)
 	if err != nil {
 		a.logger.Printf("Error connecting to server - %s", err)
 		return err

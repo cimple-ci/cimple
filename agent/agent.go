@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"crypto/tls"
 	"github.com/kardianos/osext"
 	"github.com/lukesmith/cimple/messages"
 	"github.com/lukesmith/cimple/vcs/git"
@@ -28,13 +29,17 @@ const (
 )
 
 type Config struct {
-	ServerAddr string
-	ServerPort string
-	SyslogUrl  string
+	ServerAddr      string
+	ServerPort      string
+	SyslogUrl       string
+	EnableTLS       bool
+	TLSClientConfig *tls.Config
 }
 
 func DefaultConfig() (*Config, error) {
-	c := &Config{}
+	c := &Config{
+		EnableTLS: true,
+	}
 	return c, nil
 }
 
@@ -159,7 +164,7 @@ func (agent *Agent) Start() error {
 		agent.logger.Printf("Confirmed %s", msg.Text)
 	})
 
-	conn, err := newWebsocketServerConnection(agent.config.ServerAddr, agent.config.ServerPort, agent.Id, agent.logger)
+	conn, err := newWebsocketServerConnection(agent.config, agent.Id, agent.logger)
 	if err != nil {
 		return err
 	}
@@ -198,7 +203,7 @@ func maintainConnection(agent *Agent, conn *serverConnection) error {
 func reconnect(agent *Agent) {
 	select {
 	case <-time.After(time.Second * 1):
-		conn, err := newWebsocketServerConnection(agent.config.ServerAddr, agent.config.ServerPort, agent.Id, agent.logger)
+		conn, err := newWebsocketServerConnection(agent.config, agent.Id, agent.logger)
 		if err != nil {
 			agent.logger.Printf("Unable to connect %+v", err)
 		}

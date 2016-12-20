@@ -31,12 +31,12 @@ func Server() cli.Command {
 				Usage: "Disable TLS for the server",
 			},
 			cli.StringFlag{
-				Name: "tls-cert-file",
+				Name:  "tls-cert-file",
 				Usage: "Specifies the path to the TLS certificate file",
 				Value: "server.crt",
 			},
 			cli.StringFlag{
-				Name: "tls-key-file",
+				Name:  "tls-key-file",
 				Usage: "Specifies the path to the TLS key file",
 				Value: "server.key",
 			},
