@@ -142,7 +142,7 @@ func (agent *Agent) Start() error {
 
 		outWriter := io.MultiWriter(os.Stdout)
 
-		s, err := syslog.Dial("tcp", agent.config.SyslogUrl, syslog.LOG_INFO, "Runner", nil)
+		s, err := syslog.Dial("tcp", agent.config.SyslogUrl, syslog.LOG_INFO, "Runner", agent.config.TLSClientConfig)
 		if err != nil {
 			agent.logger.Printf("Error connecting to syslog %+v", err)
 		}

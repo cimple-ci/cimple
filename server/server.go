@@ -11,20 +11,18 @@ import (
 )
 
 type Config struct {
-	Addr        string
-	SyslogAddr  string
-	TLSCertFile string
-	TLSKeyFile  string
-	EnableTLS   bool
+	Addr            string
+	SyslogAddr      string
+	EnableTLS       bool
+	TLSServerConfig *tls.Config
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Addr:        ":0",
-		SyslogAddr:  ":1514",
-		EnableTLS:   false,
-		TLSCertFile: "server.crt",
-		TLSKeyFile:  "server.key",
+		Addr:            ":0",
+		SyslogAddr:      ":1514",
+		EnableTLS:       false,
+		TLSServerConfig: &tls.Config{},
 	}
 }
 
@@ -84,19 +82,7 @@ func createListener(config *Config, logger *log.Logger) (net.Listener, error) {
 	}
 
 	if config.EnableTLS {
-		logger.Printf("Configuring server with TLS enabled")
-		logger.Printf("CertFile %s", config.TLSCertFile)
-		logger.Printf("KeyFile %s", config.TLSKeyFile)
-		cer, err := tls.LoadX509KeyPair(config.TLSCertFile, config.TLSKeyFile)
-		if err != nil {
-			return nil, err
-		}
-
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cer},
-		}
-
-		return tls.Listen("tcp", addr, tlsConfig)
+		return tls.Listen("tcp", addr, config.TLSServerConfig)
 	} else {
 		logger.Printf("Configuring server with TLS disabled")
 		return net.Listen("tcp", addr)

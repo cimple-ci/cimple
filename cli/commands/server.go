@@ -1,8 +1,7 @@
 package cli
 
 import (
-	"log"
-
+	"crypto/tls"
 	"fmt"
 	"github.com/lukesmith/cimple/logging"
 	"github.com/lukesmith/cimple/server"
@@ -41,24 +40,38 @@ func Server() cli.Command {
 				Value: "server.key",
 			},
 		},
-		Action: func(c *cli.Context) {
+		Action: func(c *cli.Context) error {
 			logging.SetDefaultLogger("Server", os.Stdout)
 			logger := logging.CreateLogger("Server", os.Stdout)
 
 			serverConfig := server.DefaultConfig()
 			serverConfig.EnableTLS = !c.Bool("no-tls")
-			serverConfig.TLSCertFile = c.String("tls-cert-file")
-			serverConfig.TLSKeyFile = c.String("tls-key-file")
+
+			if serverConfig.EnableTLS {
+				tlsCertFile := c.String("tls-cert-file")
+				tlsKeyFile := c.String("tls-key-file")
+				cer, err := tls.LoadX509KeyPair(tlsCertFile, tlsKeyFile)
+				if err != nil {
+					return err
+				}
+
+				serverConfig.TLSServerConfig = &tls.Config{
+					Certificates: []tls.Certificate{cer},
+				}
+			}
+
 			serverConfig.Addr = fmt.Sprintf("%s:%s", c.String("host"), c.String("port"))
 			server, err := server.NewServer(serverConfig, logger)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			err = server.Start()
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
+
+			return nil
 		},
 	}
 }
