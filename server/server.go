@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"log"
 	"net"
 	"net/http"
@@ -10,14 +11,20 @@ import (
 )
 
 type Config struct {
-	Addr       string
-	SyslogAddr string
+	Addr        string
+	SyslogAddr  string
+	TLSCertFile string
+	TLSKeyFile  string
+	EnableTLS   bool
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Addr:       ":0",
-		SyslogAddr: ":1514",
+		Addr:        ":0",
+		SyslogAddr:  ":1514",
+		EnableTLS:   false,
+		TLSCertFile: "server.crt",
+		TLSKeyFile:  "server.key",
 	}
 }
 
@@ -55,12 +62,7 @@ func (server *Server) Start() error {
 		Addr: server.config.Addr,
 	}
 
-	addr := server.config.Addr
-	if addr == "" {
-		addr = ":http"
-	}
-
-	ln, err := net.Listen("tcp", addr)
+	ln, err := createListener(server.config, server.logger)
 	if err != nil {
 		return err
 	}
@@ -73,6 +75,32 @@ func (server *Server) Start() error {
 	}
 
 	return nil
+}
+
+func createListener(config *Config, logger *log.Logger) (net.Listener, error) {
+	addr := config.Addr
+	if addr == "" {
+		addr = ":http"
+	}
+
+	if config.EnableTLS {
+		logger.Printf("Configuring server with TLS enabled")
+		logger.Printf("CertFile %s", config.TLSCertFile)
+		logger.Printf("KeyFile %s", config.TLSKeyFile)
+		cer, err := tls.LoadX509KeyPair(config.TLSCertFile, config.TLSKeyFile)
+		if err != nil {
+			return nil, err
+		}
+
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cer},
+		}
+
+		return tls.Listen("tcp", addr, tlsConfig)
+	} else {
+		logger.Printf("Configuring server with TLS disabled")
+		return net.Listen("tcp", addr)
+	}
 }
 
 func syslogEndpoint(server *Server) {
