@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"log"
 	"net"
 	"net/http"
@@ -10,14 +11,18 @@ import (
 )
 
 type Config struct {
-	Addr       string
-	SyslogAddr string
+	Addr            string
+	SyslogAddr      string
+	EnableTLS       bool
+	TLSServerConfig *tls.Config
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Addr:       ":0",
-		SyslogAddr: ":1514",
+		Addr:            ":0",
+		SyslogAddr:      ":1514",
+		EnableTLS:       false,
+		TLSServerConfig: &tls.Config{},
 	}
 }
 
@@ -55,12 +60,7 @@ func (server *Server) Start() error {
 		Addr: server.config.Addr,
 	}
 
-	addr := server.config.Addr
-	if addr == "" {
-		addr = ":http"
-	}
-
-	ln, err := net.Listen("tcp", addr)
+	ln, err := createListener(server.config, server.logger)
 	if err != nil {
 		return err
 	}
@@ -75,16 +75,52 @@ func (server *Server) Start() error {
 	return nil
 }
 
-func syslogEndpoint(server *Server) {
-	server.logger.Print("Setting up syslog endpoint")
+func createListener(config *Config, logger *log.Logger) (net.Listener, error) {
+	addr := config.Addr
+	if addr == "" {
+		addr = ":http"
+	}
+
+	if config.EnableTLS {
+		logger.Printf("Configuring server with TLS enabled")
+		return tls.Listen("tcp", addr, config.TLSServerConfig)
+	} else {
+		logger.Printf("Configuring server with TLS disabled")
+		return net.Listen("tcp", addr)
+	}
+}
+
+func syslogEndpoint(server *Server) error {
+	server.logger.Printf("Setting up syslog endpoint at %s", server.config.SyslogAddr)
 	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 
 	syslogServer := syslog.NewServer()
 	syslogServer.SetFormat(&RFC5424Formatter{})
 	syslogServer.SetHandler(handler)
-	syslogServer.ListenTCP(server.config.SyslogAddr)
-	syslogServer.Boot()
+	syslogServer.SetTlsPeerNameFunc(func(tlsConn *tls.Conn) (string, bool) {
+		return "", true
+	})
+	if server.config.EnableTLS == true {
+		server.logger.Print("Syslog listening with TLS enabled")
+		err := syslogServer.ListenTCPTLS(server.config.SyslogAddr, server.config.TLSServerConfig)
+		if err != nil {
+			return err
+		}
+	} else {
+		server.logger.Print("Syslog listening with TLS disabled")
+		err := syslogServer.ListenTCP(server.config.SyslogAddr)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := syslogServer.Boot()
+	if err != nil {
+		return err
+	}
+
+	server.logger.Printf("Syslog server booted")
 
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
@@ -95,4 +131,6 @@ func syslogEndpoint(server *Server) {
 	}(channel)
 
 	syslogServer.Wait()
+
+	return nil
 }
