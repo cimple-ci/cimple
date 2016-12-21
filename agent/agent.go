@@ -37,9 +37,7 @@ type Config struct {
 }
 
 func DefaultConfig() (*Config, error) {
-	c := &Config{
-		EnableTLS: true,
-	}
+	c := &Config{}
 	return c, nil
 }
 
@@ -142,7 +140,7 @@ func (agent *Agent) Start() error {
 
 		outWriter := io.MultiWriter(os.Stdout)
 
-		s, err := syslog.Dial("tcp", agent.config.SyslogUrl, syslog.LOG_INFO, "Runner", agent.config.TLSClientConfig)
+		s, err := buildSyslogDialer(agent)
 		if err != nil {
 			agent.logger.Printf("Error connecting to syslog %+v", err)
 		}
@@ -172,6 +170,16 @@ func (agent *Agent) Start() error {
 	maintainConnection(agent, conn)
 
 	for {
+	}
+}
+
+func buildSyslogDialer(agent *Agent) (*syslog.Writer, error) {
+	if agent.config.EnableTLS == true {
+		agent.logger.Printf("Connecting runner to syslog endpoint with TLS enabled")
+		return syslog.Dial("tcp", agent.config.SyslogUrl, syslog.LOG_INFO, "Runner", agent.config.TLSClientConfig)
+	} else {
+		agent.logger.Printf("Connecting runner to syslog endpoint with TLS disabled")
+		return syslog.Dial("tcp", agent.config.SyslogUrl, syslog.LOG_INFO, "Runner", nil)
 	}
 }
 
