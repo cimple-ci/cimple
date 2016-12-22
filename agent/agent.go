@@ -167,10 +167,11 @@ func (agent *Agent) Start() error {
 		return err
 	}
 
+	done := make(chan bool)
 	maintainConnection(agent, conn)
+	<- done
 
-	for {
-	}
+	return nil
 }
 
 func buildSyslogDialer(agent *Agent) (*syslog.Writer, error) {
