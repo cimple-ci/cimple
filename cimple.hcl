@@ -60,6 +60,14 @@ goxc -build-ldflags \
 BODY
   }
 
+  script build-alpine-binary {
+    body = <<BODY
+docker run -u `id -u $USER` --rm -v "$PWD":/go/src/github.com/lukesmith/cimple -w /go/src/github.com/lukesmith/cimple golang:1.7.4-alpine go build -v \
+  -ldflags="-X main.VERSION={{index .Project.Version}} -X main.BuildDate={{index .FormattedBuildDate}} -X main.Revision={{index .Vcs.Revision}}" \
+  -o output/cimple-alpine
+BODY
+  }
+
   script build-cimple-docker {
     body = <<SCRIPT
 {{ if ne (index .Vcs.Branch) "master" }}

@@ -169,7 +169,7 @@ func (agent *Agent) Start() error {
 
 	done := make(chan bool)
 	maintainConnection(agent, conn)
-	<- done
+	<-done
 
 	return nil
 }
