@@ -1,10 +1,10 @@
 cimple {
-  version = "0.0.1"
+  version = "0.0.4"
 }
 
 name = "Cimple"
 description = "Cimple CI build tasks"
-version = "0.0.4"
+version = "0.0.5"
 
 env {
   GOPATH = "{{index .HostEnv \"GOPATH\"}}"
