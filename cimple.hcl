@@ -75,16 +75,22 @@ docker build --build-arg CIMPLE_VERSION={{index .Project.Version}}-$VERSION_LABE
 {{ else }}
 docker build --build-arg CIMPLE_VERSION={{index .Project.Version}} -t cimple -f Dockerfile .
 {{ end }}
+
+# Create a ruby agent image
+docker build -t cimple-ruby-agent -f Dockerfile.ruby-agent .
 SCRIPT
   }
 
   script tag-cimple-docker {
     body = <<SCRIPT
 {{ if ne (index .Vcs.Branch) "master" }}
-docker tag cimpleci/cimple:latest cimpleci/cimple:{{index .Project.Version}}-$VERSION_LABEL
+docker tag cimple cimpleci/cimple:{{index .Project.Version}}-$VERSION_LABEL
+docker tag cimple-ruby-agent cimpleci/cimple-ruby-agent:{{index .Project.Version}}-$VERSION_LABEL
 {{ else }}
 docker tag cimple cimpleci/cimple:latest
 docker tag cimpleci/cimple:latest cimpleci/cimple:{{index .Project.Version}}
+docker tag cimple-ruby-agent cimpleci/cimple-ruby-agent:latest
+docker tag cimpleci/cimple-ruby-agent:latest cimpleci/cimple-ruby-agent:{{index .Project.Version}}
 {{ end }}
 SCRIPT
   }
@@ -98,9 +104,12 @@ task publish {
     body = <<SCRIPT
 {{ if ne (index .Vcs.Branch) "master" }}
 docker push cimpleci/cimple:{{index .Project.Version}}-$VERSION_LABEL
+docker push cimpleci/cimple-ruby-agent:{{index .Project.Version}}-$VERSION_LABEL
 {{ else }}
 docker push cimpleci/cimple:latest
 docker push cimpleci/cimple:{{index .Project.Version}}
+docker push cimpleci/cimple-ruby-agent:latest
+docker push cimpleci/cimple-ruby-agent:{{index .Project.Version}}
 {{ end }}
 SCRIPT
   }

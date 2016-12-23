@@ -43,6 +43,10 @@ func Agent() cli.Command {
 				Name:  "tls-ca-file",
 				Usage: "Specifies the path to the server CA certificate file",
 			},
+			cli.StringSliceFlag{
+				Name:  "tag",
+				Usage: "Specify tags for the agent",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			logging.SetDefaultLogger("Agent", os.Stdout)
